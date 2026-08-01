@@ -1,0 +1,3 @@
+export declare function useHealthQuery(): import("@tanstack/react-query").UseQueryResult<NoInfer<import("@sk-job-pilot/shared").ApiResponse<import("@sk-job-pilot/shared").HealthCheckData>>, Error>;
+export declare function useDatabaseHealthQuery(): import("@tanstack/react-query").UseQueryResult<NoInfer<import("@sk-job-pilot/shared").ApiResponse<import("@sk-job-pilot/shared").HealthCheckData>>, Error>;
+//# sourceMappingURL=use-health.d.ts.map

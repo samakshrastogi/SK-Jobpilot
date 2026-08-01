@@ -1,0 +1,33 @@
+{
+  "name": "sk-job-pilot-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SK JobPilot - AI-powered Job Discovery, Matching, Application & Interview Platform",
+  "type": "module",
+  "scripts": {
+    "postinstall": "npm install --prefix packages/config && npm install --prefix packages/shared && npm install --prefix packages/ui && npm install --prefix apps/api && npm install --prefix apps/web",
+    "dev": "concurrently -k -p \"[{name}]\" -c \"cyan,magenta\" -n \"API,WEB\" \"npm run dev --prefix apps/api\" \"npm run dev --prefix apps/web\"",
+    "build": "npm run build --prefix packages/shared && npm run build --prefix packages/ui && npm run build --prefix apps/api && npm run build --prefix apps/web",
+    "typecheck": "npm run typecheck --prefix packages/shared && npm run typecheck --prefix packages/ui && npm run typecheck --prefix apps/api && npm run typecheck --prefix apps/web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "test": "npm run test --prefix apps/api && npm run test --prefix apps/web",
+    "clean": "rimraf node_modules dist && npm run clean --prefix packages/config && npm run clean --prefix packages/shared && npm run clean --prefix packages/ui && npm run clean --prefix apps/api && npm run clean --prefix apps/web"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/node": "^22.10.10",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.19.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0",
+    "vitest": "^3.0.4"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

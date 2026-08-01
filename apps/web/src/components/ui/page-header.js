@@ -1,0 +1,7 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import * as React from 'react';
+import { ChevronRight } from 'lucide-react';
+export function PageHeader({ title, description, breadcrumbs, actions }) {
+    return (_jsxs("div", { className: "flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-6 border-b border-slate-800/80 mb-6", children: [_jsxs("div", { children: [breadcrumbs && breadcrumbs.length > 0 ? (_jsx("nav", { className: "flex items-center space-x-1.5 text-xs text-slate-400 mb-1.5", children: breadcrumbs.map((item, idx) => (_jsxs(React.Fragment, { children: [idx > 0 ? _jsx(ChevronRight, { className: "h-3 w-3 text-slate-600" }) : null, item.href ? (_jsx("a", { href: item.href, className: "hover:text-indigo-400 transition-colors", children: item.label })) : (_jsx("span", { className: "text-slate-300 font-medium", children: item.label }))] }, idx))) })) : null, _jsx("h1", { className: "text-2xl font-bold tracking-tight text-slate-100", children: title }), description ? _jsx("p", { className: "text-xs text-slate-400 mt-1", children: description }) : null] }), actions ? _jsx("div", { className: "flex items-center gap-2 mt-3 md:mt-0", children: actions }) : null] }));
+}
+//# sourceMappingURL=page-header.js.map

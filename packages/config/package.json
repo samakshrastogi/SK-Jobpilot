@@ -1,0 +1,11 @@
+{
+  "name": "@sk-job-pilot/config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./tsconfig.base.json",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist *.tsbuildinfo"
+  }
+}

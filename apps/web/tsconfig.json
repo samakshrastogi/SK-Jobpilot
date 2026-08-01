@@ -1,0 +1,20 @@
+{
+  "extends": "../../packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["vite/client"],
+    "jsx": "react-jsx",
+    "composite": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@sk-job-pilot/shared": ["../../packages/shared/dist/index.d.ts"],
+      "@sk-job-pilot/ui": ["../../packages/ui/dist/index.d.ts"],
+      "@sk-job-pilot/config": ["../../packages/config"]
+    }
+  },
+  "include": ["src/**/*"]
+}
