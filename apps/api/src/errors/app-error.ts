@@ -33,6 +33,6 @@ export class AppError extends Error {
   }
 
   static serviceUnavailable(message: string = 'Service temporarily unavailable'): AppError {
-    return new AppError(message, 533, 'SERVICE_UNAVAILABLE');
+    return new AppError(message, 503, 'SERVICE_UNAVAILABLE');
   }
 }

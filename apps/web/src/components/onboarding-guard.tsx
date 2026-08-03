@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: resumesResponse, isLoading } = useResumesQuery();
+  const { data: resumesResponse, isLoading, isError } = useResumesQuery();
 
   const resumes = resumesResponse?.data || [];
   const masterResume = resumes.find(
@@ -13,10 +13,10 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   );
 
   React.useEffect(() => {
-    if (!isLoading && !masterResume && location.pathname !== '/onboarding') {
+    if (!isLoading && !isError && !masterResume && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
     }
-  }, [isLoading, masterResume, location.pathname, navigate]);
+  }, [isLoading, isError, masterResume, location.pathname, navigate]);
 
   return <>{children}</>;
 }

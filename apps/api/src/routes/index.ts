@@ -12,10 +12,12 @@ import { systemRouter } from './system.routes.js';
 import { phase5Router } from './phase5.routes.js';
 import { onboardingRouter } from './onboarding.routes.js';
 import { dashboardRouter } from './dashboard.routes.js';
+import { requireDatabase } from '../middlewares/database-ready.js';
 
 export const apiRouter = Router();
 
 apiRouter.use('/', healthRouter);
+apiRouter.use(requireDatabase);
 apiRouter.use('/', profileRouter);
 apiRouter.use('/', resumeRouter);
 apiRouter.use('/', jobRouter);

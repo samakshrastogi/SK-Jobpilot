@@ -8,6 +8,7 @@ import { Upload, CheckCircle2, Sparkles, ArrowRight, ShieldCheck, AlertTriangle 
 import { toast } from 'sonner';
 import { useUploadResumeMutation } from '../hooks/use-resumes';
 import { useProfileQuery } from '../hooks/use-profile';
+import { useHealthQuery } from '../hooks/use-health';
 import { patchProfile } from '../services/profile.service';
 import {
   fetchOnboardingState,
@@ -29,6 +30,7 @@ export function OnboardingPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadResumeMutation();
   const profileQuery = useProfileQuery();
+  const healthQuery = useHealthQuery();
   const [currentStep, setCurrentStep] = React.useState(1);
   const [resume, setResume] = React.useState<Resume | null>(null);
   const [recommendations, setRecommendations] = React.useState<RoleRecommendation[]>([]);
@@ -124,15 +126,17 @@ export function OnboardingPage() {
   };
 
   const handleActivate = async () => {
+    const safeDailyTarget = Math.min(50, Math.max(1, Number.isFinite(dailyTarget) ? dailyTarget : 10));
+    const safeMinimumMatchScore = Math.min(100, Math.max(0, Number.isFinite(minimumMatchScore) ? minimumMatchScore : 75));
     setIsActivating(true);
     try {
       await updateAutomationConfiguration({
         enabled: true,
         mode: 'prepare_and_review',
         frequency: 'hourly',
-        minimumMatchScore,
-        maxApplicationsPerHour: Math.min(5, dailyTarget),
-        maxApplicationsPerDay: dailyTarget,
+        minimumMatchScore: safeMinimumMatchScore,
+        maxApplicationsPerHour: Math.min(5, safeDailyTarget),
+        maxApplicationsPerDay: safeDailyTarget,
         autoAnalyze: true,
         autoMatch: true,
         autoTailorResume: true,
@@ -151,6 +155,7 @@ export function OnboardingPage() {
     }
   };
 
+  const isDatabaseConnected = healthQuery.data?.data?.database === 'connected';
   const parsed = resume?.parsedContent;
   const profile = profileQuery.data?.data;
 
@@ -165,11 +170,13 @@ export function OnboardingPage() {
         })}
       </div>
 
+      {!healthQuery.isLoading && !isDatabaseConnected && <div className="flex gap-3 rounded-lg border border-amber-500/40 bg-amber-950/20 p-4 text-sm text-amber-200"><AlertTriangle className="h-5 w-5 shrink-0" /><div><strong>MongoDB is not connected.</strong><p className="text-xs mt-1">Start Docker Desktop, run <code>docker compose up -d mongodb</code>, and wait a few seconds. Upload and profile actions are disabled until the database reconnects.</p></div></div>}
+
       {currentStep === 1 && <Card className="p-8 border-dashed border-indigo-500/40 bg-slate-900/60 text-center space-y-4">
         <Upload className="h-10 w-10 mx-auto text-indigo-400" />
         <div><h3 className="text-lg font-bold text-slate-100">Upload Your Master Resume</h3><p className="text-xs text-slate-400 mt-1">PDF or DOCX, up to the configured upload limit. The backend extracts actual text and never invents missing facts.</p></div>
         <input ref={fileInputRef} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={(event) => void handleFile(event)} />
-        <Button variant="primary" disabled={uploadMutation.isPending} onClick={() => fileInputRef.current?.click()}>{uploadMutation.isPending ? 'Uploading and parsing…' : 'Select PDF/DOCX Resume'}</Button>
+        <Button variant="primary" disabled={uploadMutation.isPending || !isDatabaseConnected} onClick={() => fileInputRef.current?.click()}>{uploadMutation.isPending ? 'Uploading and parsing…' : 'Select PDF/DOCX Resume'}</Button>
       </Card>}
 
       {currentStep === 2 && <Card className="p-6 border-slate-800 bg-slate-900/60 space-y-4">
@@ -192,7 +199,7 @@ export function OnboardingPage() {
       {currentStep === 4 && <Card className="p-6 border-slate-800 bg-slate-900/60 space-y-4">
         <h3 className="font-bold text-slate-100">Application targeting preferences</h3>
         <label className="block text-xs text-slate-400">Preferred locations<input value={preferredLocations} onChange={(event) => setPreferredLocations(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-slate-100" /></label>
-        <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-400">Minimum match score<input type="number" min="50" max="100" value={minimumMatchScore} onChange={(event) => setMinimumMatchScore(Number(event.target.value))} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2" /></label><label className="text-xs text-slate-400">Daily preparation target<input type="number" min="1" max="50" value={dailyTarget} onChange={(event) => setDailyTarget(Number(event.target.value))} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2" /></label></div>
+        <div className="grid grid-cols-2 gap-3"><label className="text-xs text-slate-400">Minimum match score<input type="number" min="50" max="100" value={minimumMatchScore} onChange={(event) => setMinimumMatchScore(Math.min(100, Math.max(0, Number(event.target.value))))} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2" /></label><label className="text-xs text-slate-400">Daily preparation target<input type="number" min="1" max="50" value={dailyTarget} onChange={(event) => setDailyTarget(Math.min(50, Math.max(1, Number(event.target.value))))} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2" /></label></div>
         <div className="flex justify-end"><Button variant="primary" onClick={() => void handleSavePreferences()}>Save preferences <ArrowRight className="h-4 w-4 ml-2" /></Button></div>
       </Card>}
 

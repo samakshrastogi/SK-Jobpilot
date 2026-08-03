@@ -1,11 +1,16 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
-import { connectDatabase, disconnectDatabase } from './database/connection.js';
+import { connectDatabase, disconnectDatabase, getDatabaseStatus } from './database/connection.js';
 
 async function startServer() {
   // Connect to database (handles disconnection gracefully)
   await connectDatabase();
+
+  const databaseRetryTimer = setInterval(() => {
+    if (getDatabaseStatus() === 'disconnected') void connectDatabase();
+  }, 10000);
+  databaseRetryTimer.unref();
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {

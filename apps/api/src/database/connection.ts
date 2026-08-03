@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
+mongoose.set('bufferCommands', false);
+
 let isConnected = false;
 
 export async function connectDatabase(): Promise<boolean> {
@@ -11,18 +13,18 @@ export async function connectDatabase(): Promise<boolean> {
   }
 
   try {
-    logger.info({ uri: env.MONGODB_URI }, 'Attempting MongoDB connection...');
+    logger.info('Attempting MongoDB connection...');
     await mongoose.connect(env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 2000,
     });
     isConnected = true;
-    logger.info('✅ Database connected successfully');
+    logger.info('Database connected successfully');
     return true;
   } catch (error) {
     isConnected = false;
     logger.warn(
       { error },
-      '⚠️ Database connection failed. Operating in degraded/disconnected mode.'
+      'Database connection failed. Database-backed endpoints will return 503.'
     );
     return false;
   }

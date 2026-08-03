@@ -5,13 +5,13 @@ import { sendSuccess } from '../utils/response.js';
 export function getHealthStatus(req: Request, res: Response): void {
   const dbState = getDatabaseStatus();
   const data = {
-    status: 'healthy',
+    status: dbState === 'connected' ? 'healthy' : 'degraded',
     database: dbState,
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   };
 
-  sendSuccess(res, data, 'API is healthy', 200, req);
+  sendSuccess(res, data, dbState === 'connected' ? 'API and database are healthy' : 'API is available; database is disconnected', 200, req);
 }
 
 export function getDatabaseHealthStatus(req: Request, res: Response): void {
