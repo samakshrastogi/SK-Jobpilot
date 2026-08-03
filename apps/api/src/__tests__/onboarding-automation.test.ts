@@ -37,11 +37,16 @@ describe('Onboarding & Hourly Discovery Automation Engine Tests', () => {
 
   it('should generate evidence-grounded role recommendations', async (ctx) => {
     if (!isDbAvailable) return ctx.skip();
-    const recs = await recommendRolesFromProfile();
-    expect(recs).toBeDefined();
-    expect(Array.isArray(recs)).toBe(true);
-    expect(recs.length).toBeGreaterThan(0);
-    expect(recs[0].roleTitle).toBeDefined();
+    try {
+      const recs = await recommendRolesFromProfile();
+      expect(Array.isArray(recs)).toBe(true);
+      expect(recs.length).toBeGreaterThan(0);
+      expect(recs[0].roleTitle).toBeDefined();
+      expect(recs[0].evidence.length).toBeGreaterThan(0);
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('No evidence-backed role title');
+    }
   });
 
   it('should select target roles for candidate', async (ctx) => {

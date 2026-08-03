@@ -1,274 +1,48 @@
 import * as React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Compass,
-  Layers,
-  BookmarkCheck,
-  Briefcase,
-  FileText,
-  Video,
-  Bot,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Bell,
-  Search,
-  Radio,
-  Sparkles,
-  ShieldAlert,
-} from 'lucide-react';
+import { LayoutDashboard, Compass, Layers, Briefcase, FileText, ChevronLeft, ChevronRight, Menu, Radio, ShieldAlert } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { Badge } from '../components/ui/badge';
 import { Drawer } from '../components/ui/drawer';
-import { CommandPalette } from '../components/ui/command-palette';
 import { OnboardingGuard } from '../components/onboarding-guard';
 import { useHealthQuery } from '../hooks/use-health';
 
 const navItems = [
-  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { label: 'Discover Jobs', path: '/discover', icon: Compass },
-  { label: 'Saved Jobs', path: '/saved-jobs', icon: BookmarkCheck },
+  { label: 'Overview', path: '/', icon: LayoutDashboard },
+  { label: 'Jobs', path: '/discover', icon: Compass },
+  { label: 'Review', path: '/review-queue', icon: ShieldAlert },
   { label: 'Applications', path: '/applications', icon: Briefcase },
-  { label: 'Review Queue', path: '/review-queue', icon: ShieldAlert },
-  { label: 'Resumes', path: '/resumes', icon: FileText },
+  { label: 'Resume', path: '/resumes', icon: FileText },
   { label: 'Automation', path: '/automation', icon: Layers },
-  { label: 'Discovery Sources', path: '/discovery-sources', icon: Layers },
-  { label: 'Interviews', path: '/interviews', icon: Video },
-  { label: 'ATS Fixture Lab', path: '/ats-fixture-lab', icon: Layers },
-  { label: 'Agent Activity', path: '/agent-activity', icon: Bot },
-  { label: 'Settings', path: '/settings', icon: Settings },
 ];
 
 export function AppLayout() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
-  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
-
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const location = useLocation();
-  const { data: healthData, isError: isHealthError } = useHealthQuery();
+  const { data: healthData, isError: healthError } = useHealthQuery();
+  const current = navItems.find((item) => item.path === location.pathname || (item.path !== '/' && location.pathname.startsWith(item.path)));
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const navigation = (mobile = false) => <nav className="space-y-1 p-3">{navItems.map((item) => {
+    const Icon = item.icon;
+    return <NavLink key={item.path} to={item.path} onClick={() => mobile && setMobileOpen(false)} className={({ isActive }) => cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors', isActive ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100')} title={collapsed ? item.label : undefined}><Icon className="h-4 w-4 shrink-0" />{(!collapsed || mobile) && <span>{item.label}</span>}</NavLink>;
+  })}</nav>;
 
-  const currentNav = navItems.find(
-    (item) =>
-      item.path === location.pathname ||
-      (item.path !== '/' && location.pathname.startsWith(item.path))
-  );
-
-  return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-950 text-slate-100">
-      {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          'hidden md:flex flex-col border-r border-slate-800/80 bg-slate-900/90 transition-all duration-300 relative z-20',
-          isSidebarCollapsed ? 'w-16' : 'w-64'
-        )}
-      >
-        {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-slate-800/80">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-bold shadow-md shadow-indigo-600/30 flex-shrink-0">
-              SK
-            </div>
-            {!isSidebarCollapsed ? (
-              <div className="flex flex-col truncate">
-                <span className="text-sm font-bold tracking-tight text-white">SK JobPilot</span>
-                <span className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">
-                  AI Copilot
-                </span>
-              </div>
-            ) : null}
-          </div>
-          <button
-            onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-            title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            {isSidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-
-        {/* Navigation Items */}
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all group',
-                    isActive
-                      ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 shadow-sm'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
-                  )
-                }
-                title={isSidebarCollapsed ? item.label : undefined}
-              >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                {!isSidebarCollapsed ? <span>{item.label}</span> : null}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer with Health Indicator */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
-          {!isSidebarCollapsed ? (
-            <div className="rounded-lg border border-slate-800 p-2.5 bg-slate-900/60 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Radio
-                  className={cn(
-                    'h-3.5 w-3.5 animate-pulse',
-                    !isHealthError ? 'text-emerald-400' : 'text-rose-400'
-                  )}
-                />
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">
-                    Backend API
-                  </span>
-                  <span className="text-xs font-medium text-slate-200">
-                    {!isHealthError && healthData ? 'Connected' : 'Offline'}
-                  </span>
-                </div>
-              </div>
-              <Badge variant={!isHealthError ? 'success' : 'danger'}>
-                {!isHealthError ? 'v1.0' : 'OFF'}
-              </Badge>
-            </div>
-          ) : (
-            <div className="flex justify-center" title="API Status">
-              <Radio
-                className={cn(
-                  'h-4 w-4 animate-pulse',
-                  !isHealthError ? 'text-emerald-400' : 'text-rose-400'
-                )}
-              />
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* Mobile Drawer Navigation */}
-      <Drawer
-        isOpen={isMobileOpen}
-        onClose={() => setIsMobileOpen(false)}
-        side="left"
-        title="SK JobPilot Menu"
-      >
-        <nav className="space-y-1.5 pt-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsMobileOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition-all',
-                    isActive
-                      ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  )
-                }
-              >
-                <Icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-      </Drawer>
-
-      {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-4 md:px-6 backdrop-blur-md z-10">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMobileOpen(true)}
-              className="md:hidden rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-100">
-                {currentNav?.label || 'SK JobPilot'}
-              </h2>
-            </div>
-          </div>
-
-          {/* Right Header Controls */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200 transition-all"
-            >
-              <Search className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Search jobs, skills...</span>
-              <kbd className="hidden sm:inline-block rounded border border-slate-800 bg-slate-900 px-1.5 text-[10px] text-slate-400">
-                ⌘K
-              </kbd>
-            </button>
-
-            <button
-              onClick={() => setIsNotificationsOpen(true)}
-              className="relative rounded-lg border border-slate-800 bg-slate-900/80 p-2 text-slate-400 hover:border-slate-700 hover:text-white transition-colors"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-slate-950" />
-            </button>
-          </div>
-        </header>
-
-        {/* Scrollable Page Outlet with OnboardingGuard */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-950">
-          <OnboardingGuard>
-            <Outlet />
-          </OnboardingGuard>
-        </main>
+  return <div className="flex h-screen w-full overflow-hidden bg-slate-950 text-slate-100">
+    <aside className={cn('hidden md:flex flex-col border-r border-slate-800 bg-slate-900/90 transition-all', collapsed ? 'w-16' : 'w-60')}>
+      <div className="flex h-16 items-center justify-between px-4 border-b border-slate-800">
+        <div className="flex items-center gap-3 overflow-hidden"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 font-bold">SK</div>{!collapsed && <div><div className="text-sm font-bold">SK JobPilot</div><div className="text-[10px] text-indigo-400">JOB APPLICATION AGENT</div></div>}</div>
+        <button type="button" onClick={() => setCollapsed((value) => !value)} className="h-7 w-7 rounded border border-slate-800 text-slate-400 hover:text-white">{collapsed ? <ChevronRight className="h-4 w-4 mx-auto" /> : <ChevronLeft className="h-4 w-4 mx-auto" />}</button>
       </div>
+      <div className="flex-1 overflow-y-auto">{navigation()}</div>
+      <div className="p-3 border-t border-slate-800"><div className={cn('flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/60 p-2.5', collapsed && 'justify-center')}><Radio className={cn('h-3.5 w-3.5', !healthError ? 'text-emerald-400' : 'text-rose-400')} />{!collapsed && <><span className="text-xs flex-1">{!healthError && healthData ? 'API connected' : 'API offline'}</span><Badge variant={!healthError ? 'success' : 'danger'}>{!healthError ? 'ON' : 'OFF'}</Badge></>}</div></div>
+    </aside>
 
-      {/* Command Palette */}
-      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+    <Drawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} side="left" title="SK JobPilot">{navigation(true)}</Drawer>
 
-      {/* Notifications Drawer */}
-      <Drawer
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-        side="right"
-        title="Notifications"
-      >
-        <div className="space-y-3 pt-2">
-          <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold mb-1">
-              <Bot className="h-4 w-4" /> Discovery Agent
-            </div>
-            <p className="text-xs text-slate-300">
-              Hourly automated discovery run completed successfully.
-            </p>
-            <span className="text-[10px] text-slate-400 mt-2 block">Just now</span>
-          </div>
-        </div>
-      </Drawer>
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <header className="flex h-16 items-center border-b border-slate-800 bg-slate-900/60 px-4 md:px-6"><button type="button" onClick={() => setMobileOpen(true)} className="md:hidden mr-3 rounded p-2 text-slate-400 hover:bg-slate-800"><Menu className="h-5 w-5" /></button><h1 className="text-base font-bold">{current?.label || 'SK JobPilot'}</h1></header>
+      <main className="flex-1 overflow-y-auto bg-slate-950 p-4 md:p-6 lg:p-8"><OnboardingGuard><Outlet /></OnboardingGuard></main>
     </div>
-  );
+  </div>;
 }

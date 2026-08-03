@@ -11,6 +11,7 @@ import { executeApplicationAgent } from '../services/application-agent.service.j
 import { TargetRoleModel } from '../models/target-role.model.js';
 import { AutomationConfigurationModel } from '../models/automation-configuration.model.js';
 import { ReviewQueueItemModel } from '../models/review-queue-item.model.js';
+import { ApplicationModel } from '../models/application.model.js';
 import { selectTargetRolesSchema, automationConfigSchema, updateOnboardingStepSchema } from '@sk-job-pilot/shared';
 import { sendSuccess } from '../utils/response.js';
 import { AppError } from '../errors/app-error.js';
@@ -94,5 +95,14 @@ export async function updateReviewQueueItem(req: Request, res: Response): Promis
   const validated = reviewDecisionSchema.parse(req.body);
   const item = await ReviewQueueItemModel.findByIdAndUpdate(id, validated, { new: true }).populate('jobId');
   if (!item) throw AppError.notFound('Review queue item not found');
+  if (item.applicationId) {
+    const application = await ApplicationModel.findById(item.applicationId);
+    if (application && validated.status === 'rejected') {
+      application.status = 'rejected';
+      application.lastActivityDate = new Date();
+      application.timelineEvents.push({ status: 'rejected', title: 'Application rejected during review', description: validated.userCorrection });
+      await application.save();
+    }
+  }
   sendSuccess(res, item, 'Review queue decision saved successfully', 200, req);
 }

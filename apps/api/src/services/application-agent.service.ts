@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { AgentRunModel } from '../models/agent-run.model.js';
 import { AgentTaskModel } from '../models/agent-task.model.js';
 import { ApplicationPreparationModel } from '../models/application-preparation.model.js';
+import { ApplicationModel } from '../models/application.model.js';
+import type { IJobDocument } from '../models/job.model.js';
 import { AutomationConfigurationModel } from '../models/automation-configuration.model.js';
 import { CandidateProfileModel, type ICandidateProfileDocument } from '../models/candidate-profile.model.js';
 import { JobModel } from '../models/job.model.js';
@@ -29,6 +31,24 @@ export function isRoleAligned(title: string, roles: string[]): boolean {
   });
 }
 
+async function ensureTrackedApplication(job: IJobDocument, status: 'preparing' | 'ready_for_review') {
+  let application = await ApplicationModel.findOne({ job: job._id });
+  if (!application) {
+    application = await ApplicationModel.create({
+      job: job._id,
+      status,
+      applicationMethod: 'AI agent + browser review',
+      applicationUrl: job.applicationUrl || job.sourceUrl || '',
+      lastActivityDate: new Date(),
+      timelineEvents: [{ status, title: status === 'preparing' ? 'Agent needs more information' : 'Application prepared for review', description: 'Created automatically by the JobPilot application agent.' }],
+    });
+  } else if (['planned', 'preparing', 'ready_for_review'].includes(application.status)) {
+    application.status = status;
+    application.lastActivityDate = new Date();
+    await application.save();
+  }
+  return application;
+}
 export async function executeApplicationAgent(trigger: 'scheduled' | 'manual' = 'manual') {
   if (activeRun) return activeRun;
   activeRun = runAgent(trigger).finally(() => { activeRun = null; });
@@ -81,9 +101,10 @@ async function runAgent(trigger: 'scheduled' | 'manual') {
           task.status = 'skipped'; task.stage = 'role_alignment'; task.decisionReason = 'Job title does not align with selected target roles.'; run.skipped += 1; await task.save(); continue;
         }
         if (!job.description.trim()) {
-          await ApplicationPreparationModel.findOneAndUpdate({ jobId: job._id }, { jobId: job._id, status: 'needs_information', riskFlags: ['Job description is missing; matching cannot be verified.'] }, { upsert: true, new: true });
+          const trackedApplication = await ensureTrackedApplication(job, 'preparing');
+          await ApplicationPreparationModel.findOneAndUpdate({ jobId: job._id }, { jobId: job._id, applicationId: trackedApplication._id, status: 'needs_information', riskFlags: ['Job description is missing; matching cannot be verified.'] }, { upsert: true, new: true });
           await ReviewQueueItemModel.findOneAndUpdate({ jobId: job._id, status: 'pending' }, {
-            jobId: job._id, reason: 'Missing job information', blockingQuestion: 'Confirm the complete job description before preparing this application.',
+            jobId: job._id, applicationId: trackedApplication._id, reason: 'Missing job information', blockingQuestion: 'Confirm the complete job description before preparing this application.',
             confidence: 100, sensitiveFlag: false, status: 'pending',
           }, { upsert: true, new: true });
           task.status = 'needs_review'; task.stage = 'missing_information'; task.decisionReason = 'Job description must be confirmed by the user.';
@@ -109,9 +130,10 @@ async function runAgent(trigger: 'scheduled' | 'manual') {
         }
         run.matched += 1; task.stage = 'application_preparation'; await task.save();
         if (config.autoTailorResume) await generateTailoredResume(job.id);
-        await ApplicationPreparationModel.findOneAndUpdate({ jobId: job._id }, { jobId: job._id, status: 'ready_for_review', riskFlags: ['Final form values and portal submission require user confirmation.'] }, { upsert: true, new: true });
+        const trackedApplication = await ensureTrackedApplication(job, 'ready_for_review');
+        await ApplicationPreparationModel.findOneAndUpdate({ jobId: job._id }, { jobId: job._id, applicationId: trackedApplication._id, status: 'ready_for_review', riskFlags: ['Final form values and portal submission require user confirmation.'] }, { upsert: true, new: true });
         await ReviewQueueItemModel.findOneAndUpdate({ jobId: job._id, status: 'pending' }, {
-          jobId: job._id, reason: 'Application prepared by AI agent',
+          jobId: job._id, applicationId: trackedApplication._id, reason: 'Application prepared by AI agent',
           blockingQuestion: 'Review the tailored material and confirm final portal submission.',
           suggestedAnswer: 'Open the application page with the JobPilot extension, review all fields, then submit.',
           confidence: match.overallScore, sensitiveFlag: false, status: 'pending',

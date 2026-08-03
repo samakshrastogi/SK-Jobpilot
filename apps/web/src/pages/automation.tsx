@@ -66,7 +66,7 @@ export function AutomationPage() {
   };
 
   return <div className="space-y-6 max-w-5xl mx-auto pb-12">
-    <PageHeader title="Automation Control Center" description="Real discovery and application-preparation status for your selected roles." actions={<div className="flex gap-2"><Button size="sm" variant="outline" disabled={!config || isLoading} onClick={() => void toggleAutomation()}>{config?.enabled ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}{config?.enabled ? 'Pause' : 'Resume'}</Button><Button size="sm" variant="primary" disabled={!config?.enabled || isRunning} onClick={() => void handleRunNow()}><RefreshCw className={`h-4 w-4 mr-1.5 ${isRunning ? 'animate-spin' : ''}`} />Run AI Agent Now</Button></div>} />
+    <PageHeader title="Automation Control Center" description="Real discovery and application-preparation status for your selected roles." actions={<div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => window.location.assign('/discovery-sources')}>Sources</Button><Button size="sm" variant="outline" disabled={!config || isLoading} onClick={() => void toggleAutomation()}>{config?.enabled ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}{config?.enabled ? 'Pause' : 'Resume'}</Button><Button size="sm" variant="primary" disabled={!config?.enabled || isRunning} onClick={() => void handleRunNow()}><RefreshCw className={`h-4 w-4 mr-1.5 ${isRunning ? 'animate-spin' : ''}`} />Run AI Agent Now</Button></div>} />
 
     <div className="grid md:grid-cols-4 gap-4">
       <StatusCard label="Automation" value={isLoading ? 'Loading…' : config?.enabled ? 'ACTIVE' : 'PAUSED'} badge={config?.frequency || 'unknown'} healthy={Boolean(config?.enabled)} />

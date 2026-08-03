@@ -5,6 +5,7 @@ import { TargetRoleModel } from '../models/target-role.model.js';
 import { ResumeModel } from '../models/resume.model.js';
 import { getAIProvider } from '../ai/provider-factory.js';
 import { z } from 'zod';
+import { AppError } from '../errors/app-error.js';
 
 const roleRecommendationAiSchema = z.array(
   z.object({
@@ -170,11 +171,11 @@ Candidate Profile:
 ${JSON.stringify(profile ? profile.toJSON() : {}, null, 2)}
 
 Master Resume Text:
-${masterResume?.rawText || 'Software Engineer'}
+${masterResume?.rawText || ''}
 
 Rules:
 1. Do NOT invent skills or experience.
-2. Recommend realistic titles (e.g. Backend Engineer, Full Stack Engineer, Node.js Developer, Python Developer, AI Backend Engineer).
+2. Recommend only role titles directly supported by the supplied evidence.
 3. Classify recommendation as "highly_qualified", "qualified", or "stretch_role".
 `;
 
@@ -203,34 +204,29 @@ Rules:
       recommendations = aiRes.data;
     }
   } catch {
-    // Fallback deterministic recommendations based on profile skills
-    const skills = profile?.skills?.backend || ['TypeScript', 'Node.js', 'Python'];
-    recommendations = [
-      {
-        roleTitle: 'Backend Engineer',
-        roleFamily: 'Software Engineering',
-        suitabilityScore: 92,
-        confidenceScore: 95,
-        seniorityLevel: 'Mid-Senior',
-        evidence: [`Verified experience in ${skills.slice(0, 3).join(', ')}`],
-        matchingSkills: skills,
-        suggestedSearchTitles: ['Backend Engineer', 'Node.js Developer', 'API Engineer'],
-        suggestedExcludedTitles: ['PHP Developer', 'WordPress Specialist', 'Director'],
-        applicationRecommendation: 'highly_qualified',
-      },
-      {
-        roleTitle: 'Full Stack Engineer',
-        roleFamily: 'Software Engineering',
-        suitabilityScore: 88,
-        confidenceScore: 90,
-        seniorityLevel: 'Mid',
-        evidence: ['Proven experience developing backend services and React interfaces'],
-        matchingSkills: [...skills, 'React', 'TypeScript'],
-        suggestedSearchTitles: ['Full Stack Engineer', 'Full Stack Developer'],
-        suggestedExcludedTitles: ['Senior Manager', 'Flutter Developer'],
-        applicationRecommendation: 'qualified',
-      },
-    ];
+    const profileTitles = [
+      ...(profile?.professionalInfo?.preferredRoles || []),
+      profile?.professionalInfo?.currentTitle || '',
+      ...(profile?.experience || []).map((item) => typeof item.position === 'string' ? item.position : ''),
+    ].map((title) => title.trim()).filter(Boolean);
+    const titles = Array.from(new Set(profileTitles));
+    const skillGroups = profile?.skills || {};
+    const skills = Array.from(new Set(Object.values(skillGroups).flatMap((value) => Array.isArray(value) ? value : [])));
+    if (!titles.length) {
+      throw AppError.badRequest('No evidence-backed role title is available. Verify the parsed profile or select a target role manually.');
+    }
+    recommendations = titles.slice(0, 6).map((title) => ({
+      roleTitle: title,
+      roleFamily: 'Resume-derived',
+      suitabilityScore: skills.length ? 80 : 65,
+      confidenceScore: skills.length ? 80 : 60,
+      seniorityLevel: 'From candidate profile',
+      evidence: skills.length ? [`Profile evidence: ${skills.slice(0, 5).join(', ')}`] : [`Current profile title: ${title}`],
+      matchingSkills: skills,
+      suggestedSearchTitles: [title],
+      suggestedExcludedTitles: [],
+      applicationRecommendation: skills.length ? 'qualified' : 'partially_qualified',
+    }));
   }
 
   await RoleRecommendationModel.deleteMany({});
@@ -239,19 +235,24 @@ Rules:
 }
 
 export async function selectTargetRoles(roleTitles: string[]) {
+  const recommendations = await RoleRecommendationModel.find({ roleTitle: { $in: roleTitles } });
+  const recommendationByTitle = new Map(recommendations.map((item) => [item.roleTitle, item]));
   await TargetRoleModel.deleteMany({});
 
-  const newRoles = roleTitles.map((title) => ({
-    primaryTitle: title,
-    searchAliases: [title, `${title} Developer`],
-    includedKeywords: ['TypeScript', 'Node.js', 'React', 'Python'],
-    excludedKeywords: ['Senior Manager', 'PHP', 'WordPress', 'Director'],
-    minimumMatchScore: 75,
-    maximumRequiredExperienceYears: 5,
-    priority: 1,
-    autoApplyEnabled: false,
-    active: true,
-  }));
+  const newRoles = roleTitles.map((title) => {
+    const recommendation = recommendationByTitle.get(title);
+    return {
+      primaryTitle: title,
+      searchAliases: recommendation?.suggestedSearchTitles?.length ? recommendation.suggestedSearchTitles : [title],
+      includedKeywords: recommendation?.matchingSkills || [],
+      excludedKeywords: recommendation?.suggestedExcludedTitles || [],
+      minimumMatchScore: 75,
+      maximumRequiredExperienceYears: 30,
+      priority: 1,
+      autoApplyEnabled: false,
+      active: true,
+    };
+  });
 
   const saved = await TargetRoleModel.insertMany(newRoles);
 

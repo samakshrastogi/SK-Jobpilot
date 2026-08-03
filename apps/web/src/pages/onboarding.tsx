@@ -37,7 +37,7 @@ export function OnboardingPage() {
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
   const [isGeneratingRoles, setIsGeneratingRoles] = React.useState(false);
   const [isActivating, setIsActivating] = React.useState(false);
-  const [preferredLocations, setPreferredLocations] = React.useState('Gurugram, Noida, Bengaluru, Hyderabad, Pune, Remote India');
+  const [preferredLocations, setPreferredLocations] = React.useState('');
   const [minimumMatchScore, setMinimumMatchScore] = React.useState(75);
   const [dailyTarget, setDailyTarget] = React.useState(10);
 
@@ -182,7 +182,7 @@ export function OnboardingPage() {
       {currentStep === 2 && <Card className="p-6 border-slate-800 bg-slate-900/60 space-y-4">
         <div className="flex items-center justify-between"><h3 className="font-bold text-slate-100">Verify extracted resume evidence</h3><Badge variant={resume?.parsingStatus === 'parsed' ? 'success' : 'warning'}>{resume?.parsingStatus || 'Loaded profile'}</Badge></div>
         <div className="grid md:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 rounded bg-slate-950 border border-slate-800"><span className="text-slate-400 block mb-2">Contact</span><p>{parsed?.contactInfo?.email || profile?.personalInfo.email || 'Email missing — add it in Settings'}</p><p>{parsed?.contactInfo?.phone || profile?.personalInfo.phone || 'Phone missing — add it in Settings'}</p></div>
+          <div className="p-3 rounded bg-slate-950 border border-slate-800"><span className="text-slate-400 block mb-2">Contact</span><p>{parsed?.contactInfo?.email || profile?.personalInfo.email || 'Email missing — upload a corrected resume'}</p><p>{parsed?.contactInfo?.phone || profile?.personalInfo.phone || 'Phone missing — upload a corrected resume'}</p></div>
           <div className="p-3 rounded bg-slate-950 border border-slate-800"><span className="text-slate-400 block mb-2">Parsing confidence</span><p className="text-lg font-bold">{resume?.parsingConfidence ?? 0}%</p><p>{resume?.warnings?.join(' · ') || 'No parser warnings'}</p></div>
         </div>
         <div className="flex flex-wrap gap-2">{(parsed?.skills || Object.values(profile?.skills || {}).flat()).map((skill) => <Badge key={skill} variant="outline">{skill}</Badge>)}</div>

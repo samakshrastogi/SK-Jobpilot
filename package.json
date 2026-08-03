@@ -2,7 +2,7 @@
   "name": "sk-job-pilot-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "SK JobPilot - AI-powered Job Discovery, Matching, Application & Interview Platform",
+  "description": "SK JobPilot - AI-powered job discovery, application preparation, and tracking platform",
   "type": "module",
   "scripts": {
     "postinstall": "npm install --prefix packages/config && npm install --prefix packages/shared && npm install --prefix packages/ui && npm install --prefix apps/api && npm install --prefix apps/web",
@@ -15,7 +15,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "test": "npm run test --prefix apps/api && npm run test --prefix apps/web",
     "maintenance:check": "npx tsx apps/api/src/scripts/maintenance.ts",
-    "data:remove-samples": "npx tsx apps/api/src/scripts/cleanup-samples.ts",
     "backup:create": "npx tsx apps/api/src/scripts/backup.ts create",
     "backup:verify": "npx tsx apps/api/src/scripts/backup.ts verify",
     "extension:build": "npm run build --prefix apps/extension",
