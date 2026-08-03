@@ -597,3 +597,27 @@ export interface FollowUpReminder {
   createdAt: string;
   updatedAt: string;
 }
+
+// Phase 5 Readiness & Cover Letter Types
+export interface SystemReadiness {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  nodeVersion: string;
+  database: 'connected' | 'disconnected';
+  redis: 'connected' | 'fallback_in_memory';
+  aiProvider: 'ready' | 'missing_key';
+  storageDirWritable: boolean;
+  configuredTextModel: string;
+  configuredEmbeddingModel: string;
+  timestamp: string;
+}
+
+export interface CoverLetter {
+  id: string;
+  jobId: string;
+  job?: Job;
+  variant: 'concise' | 'standard' | 'detailed';
+  content: string;
+  approvalStatus: 'draft' | 'generated' | 'under_review' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}

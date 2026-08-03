@@ -15,14 +15,12 @@ import {
   Menu,
   Bell,
   Search,
-  CheckCircle2,
   Radio,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { Badge } from '../components/ui/badge';
-import { Modal } from '../components/ui/modal';
 import { Drawer } from '../components/ui/drawer';
-import { Input } from '../components/ui/input';
+import { CommandPalette } from '../components/ui/command-palette';
 import { useHealthQuery } from '../hooks/use-health';
 
 const navItems = [
@@ -33,6 +31,7 @@ const navItems = [
   { label: 'Applications', path: '/applications', icon: Briefcase },
   { label: 'Resumes', path: '/resumes', icon: FileText },
   { label: 'Interviews', path: '/interviews', icon: Video },
+  { label: 'ATS Fixture Lab', path: '/ats-fixture-lab', icon: Layers },
   { label: 'Agent Activity', path: '/agent-activity', icon: Bot },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];
@@ -42,10 +41,20 @@ export function AppLayout() {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState('');
 
   const location = useLocation();
   const { data: healthData, isError: isHealthError } = useHealthQuery();
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const currentNav = navItems.find(
     (item) =>
@@ -233,35 +242,8 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Global Search Modal */}
-      <Modal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        title="Global Search"
-        maxWidth="lg"
-      >
-        <div className="space-y-4">
-          <Input
-            placeholder="Type a title, skill, or company..."
-            leftIcon={<Search className="h-4 w-4" />}
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            autoFocus
-          />
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-center">
-            <p className="text-xs text-slate-400">
-              {searchQuery
-                ? `Showing preview matches for "${searchQuery}"`
-                : 'Enter keywords to search across jobs and applications.'}
-            </p>
-            <div className="mt-3 flex justify-center gap-2">
-              <Badge variant="outline">React</Badge>
-              <Badge variant="outline">Node.js</Badge>
-              <Badge variant="outline">TypeScript</Badge>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      {/* Command Palette */}
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Notifications Drawer */}
       <Drawer

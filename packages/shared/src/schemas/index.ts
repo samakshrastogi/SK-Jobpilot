@@ -421,3 +421,15 @@ export const createFollowUpReminderSchema = z.object({
   dueDate: z.string().min(1, 'Due date is required'),
   notes: z.string().optional().default(''),
 });
+
+// Phase 5 System Readiness & Cover Letter Schemas
+export const createCoverLetterSchema = z.object({
+  jobId: z.string().min(1, 'Job ID is required'),
+  variant: z.enum(['concise', 'standard', 'detailed']).optional().default('standard'),
+});
+
+export const exportResumeRequestSchema = z.object({
+  tailoredResumeId: z.string().min(1, 'Tailored Resume ID is required'),
+  format: z.enum(['pdf', 'docx', 'txt', 'html']).optional().default('pdf'),
+  template: z.enum(['ats_classic', 'modern_minimal', 'tech_lead']).optional().default('ats_classic'),
+});
