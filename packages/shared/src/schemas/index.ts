@@ -446,8 +446,12 @@ export const onboardingStateSchema = z.object({
   automationEnabled: z.boolean().default(false),
 });
 
+export const updateOnboardingStepSchema = z.object({
+  step: z.number().int().min(1).max(6),
+});
+
 export const selectTargetRolesSchema = z.object({
-  roleTitles: z.array(z.string()).min(1, 'At least one target role must be selected'),
+  roleTitles: z.array(z.string().trim().min(2)).min(1, 'At least one target role must be selected').max(10).transform((titles) => Array.from(new Set(titles))),
 });
 
 export const automationConfigSchema = z.object({

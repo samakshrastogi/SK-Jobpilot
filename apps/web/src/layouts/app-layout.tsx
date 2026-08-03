@@ -23,18 +23,18 @@ import { cn } from '../lib/cn';
 import { Badge } from '../components/ui/badge';
 import { Drawer } from '../components/ui/drawer';
 import { CommandPalette } from '../components/ui/command-palette';
+import { OnboardingGuard } from '../components/onboarding-guard';
 import { useHealthQuery } from '../hooks/use-health';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { label: 'Onboarding', path: '/onboarding', icon: Sparkles },
-  { label: 'Automation', path: '/automation', icon: Layers },
-  { label: 'Review Queue', path: '/review-queue', icon: ShieldAlert },
   { label: 'Discover Jobs', path: '/discover', icon: Compass },
-  { label: 'Discovery Sources', path: '/discovery-sources', icon: Layers },
   { label: 'Saved Jobs', path: '/saved-jobs', icon: BookmarkCheck },
   { label: 'Applications', path: '/applications', icon: Briefcase },
+  { label: 'Review Queue', path: '/review-queue', icon: ShieldAlert },
   { label: 'Resumes', path: '/resumes', icon: FileText },
+  { label: 'Automation', path: '/automation', icon: Layers },
+  { label: 'Discovery Sources', path: '/discovery-sources', icon: Layers },
   { label: 'Interviews', path: '/interviews', icon: Video },
   { label: 'ATS Fixture Lab', path: '/ats-fixture-lab', icon: Layers },
   { label: 'Agent Activity', path: '/agent-activity', icon: Bot },
@@ -145,7 +145,7 @@ export function AppLayout() {
                     Backend API
                   </span>
                   <span className="text-xs font-medium text-slate-200">
-                    {!isHealthError && healthData ? 'Connected' : 'Offline / Mock'}
+                    {!isHealthError && healthData ? 'Connected' : 'Offline'}
                   </span>
                 </div>
               </div>
@@ -239,9 +239,11 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* Scrollable Page Outlet */}
+        {/* Scrollable Page Outlet with OnboardingGuard */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-950">
-          <Outlet />
+          <OnboardingGuard>
+            <Outlet />
+          </OnboardingGuard>
         </main>
       </div>
 

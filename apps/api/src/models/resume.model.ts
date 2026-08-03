@@ -56,5 +56,14 @@ const resumeSchema = new Schema<IResumeDocument>(
 
 resumeSchema.index({ createdAt: -1 });
 
+resumeSchema.pre('save', function (next) {
+  // Master Resume Integrity Rule:
+  // A resume can be master ONLY when parsingStatus is 'parsed' and rawText exists.
+  if (this.isMaster && (this.parsingStatus !== 'parsed' || !this.rawText || this.rawText.trim().length === 0)) {
+    this.isMaster = false;
+  }
+  next();
+});
+
 export const ResumeModel: Model<IResumeDocument> =
   mongoose.models.Resume || mongoose.model<IResumeDocument>('Resume', resumeSchema);

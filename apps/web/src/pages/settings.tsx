@@ -267,101 +267,98 @@ export function SettingsPage() {
       {activeTab === 'skills' && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Technical Skill Categories</CardTitle>
-            <CardDescription>
-              Comma-separated technical tags parsed for AI vector matching.
-            </CardDescription>
+            <CardTitle className="text-base">Skills & Technical Competencies</CardTitle>
+            <CardDescription>Comma-separated technical skill categories.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
-              label="Languages (e.g. TypeScript, Python, SQL)"
+              label="Programming Languages"
               value={(formData.skills?.languages || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('languages', e.target.value)
               }
+              placeholder="TypeScript, Python, JavaScript, Go"
             />
             <Input
-              label="Backend Technologies (e.g. Node.js, Express, FastAPI)"
+              label="Backend Development"
               value={(formData.skills?.backend || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('backend', e.target.value)
               }
+              placeholder="Node.js, Express, Django, REST API, GraphQL"
             />
             <Input
-              label="Frontend Technologies (e.g. React, Next.js, Tailwind CSS)"
+              label="Frontend Development"
               value={(formData.skills?.frontend || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('frontend', e.target.value)
               }
+              placeholder="React, Vite, Next.js, Tailwind CSS"
             />
             <Input
-              label="Databases (e.g. MongoDB, PostgreSQL, Redis)"
+              label="Databases & Caching"
               value={(formData.skills?.databases || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('databases', e.target.value)
               }
+              placeholder="MongoDB, PostgreSQL, Redis"
             />
             <Input
-              label="Cloud & DevOps (e.g. Docker, AWS, GitHub Actions)"
+              label="Cloud & DevOps"
               value={(formData.skills?.cloudDevOps || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('cloudDevOps', e.target.value)
               }
+              placeholder="AWS, Docker, GitHub Actions, Linux"
             />
             <Input
-              label="AI & Automation (e.g. Gemini, LangChain, Vector DBs)"
+              label="AI & Automation"
               value={(formData.skills?.aiAutomation || []).join(', ')}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 updateSkills('aiAutomation', e.target.value)
               }
+              placeholder="Gemini API, Vector Embeddings, LangChain"
             />
           </CardContent>
         </Card>
       )}
 
-      {/* Tab 4: Work Experience */}
+      {/* Tab 4: Experience */}
       {activeTab === 'experience' && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base">Work Experience</CardTitle>
-              <CardDescription>
-                Add previous positions, bullet achievements, and technologies used.
-              </CardDescription>
+              <CardDescription>Professional roles and key achievements.</CardDescription>
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={() => {
                 const list = [...(formData.experience || [])];
-                list.push({
-                  company: 'New Company',
-                  position: 'Software Engineer',
-                  isCurrent: false,
-                });
+                list.push({ company: 'New Company', position: 'Software Engineer' });
                 setFormData({ ...formData, experience: list });
               }}
             >
-              <Plus className="h-4 w-4 mr-1" /> Add Position
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Experience
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {(formData.experience || []).map((exp, idx) => (
-              <div
-                key={idx}
-                className="p-4 rounded-lg border border-slate-800 bg-slate-950 space-y-3"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-slate-300">Position #{idx + 1}</h4>
-                  <button
+              <div key={idx} className="p-4 rounded-lg border border-slate-800 bg-slate-950 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-200">Position #{idx + 1}</h4>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-rose-400"
                     onClick={() => {
                       const list = (formData.experience || []).filter((_, i) => i !== idx);
                       setFormData({ ...formData, experience: list });
                     }}
-                    className="text-rose-400 hover:text-rose-300 p-1"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
@@ -374,7 +371,7 @@ export function SettingsPage() {
                     }}
                   />
                   <Input
-                    label="Position"
+                    label="Position / Title"
                     value={exp.position || ''}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const list = [...(formData.experience || [])];
@@ -412,7 +409,6 @@ export function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Status Summary Banner */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-lg border border-slate-800 bg-slate-950">
               <div>
                 <span className="text-xs text-slate-400 block">Active Provider</span>
@@ -440,7 +436,6 @@ export function SettingsPage() {
               </div>
             </div>
 
-            {/* Model & Budget Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Active Text Generation Model"
@@ -449,7 +444,7 @@ export function SettingsPage() {
               />
               <Input
                 label="Active Vector Embedding Model"
-                value={aiHealth?.embeddingModel || 'text-embedding-004'}
+                value={aiHealth?.embeddingModel || 'gemini-embedding-2'}
                 disabled
               />
               <Input

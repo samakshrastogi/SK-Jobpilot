@@ -11,6 +11,7 @@ import { phase4ApplicationsRouter } from './applications-phase4.routes.js';
 import { systemRouter } from './system.routes.js';
 import { phase5Router } from './phase5.routes.js';
 import { onboardingRouter } from './onboarding.routes.js';
+import { dashboardRouter } from './dashboard.routes.js';
 
 export const apiRouter = Router();
 
@@ -26,3 +27,4 @@ apiRouter.use('/', phase4ApplicationsRouter);
 apiRouter.use('/', systemRouter);
 apiRouter.use('/', phase5Router);
 apiRouter.use('/', onboardingRouter);
+apiRouter.use('/', dashboardRouter);

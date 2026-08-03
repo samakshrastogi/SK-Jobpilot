@@ -9,7 +9,7 @@ import { executeHourlyDiscoveryPipeline } from '../services/hourly-discovery.ser
 import { TargetRoleModel } from '../models/target-role.model.js';
 import { AutomationConfigurationModel } from '../models/automation-configuration.model.js';
 import { ReviewQueueItemModel } from '../models/review-queue-item.model.js';
-import { selectTargetRolesSchema, automationConfigSchema } from '@sk-job-pilot/shared';
+import { selectTargetRolesSchema, automationConfigSchema, updateOnboardingStepSchema } from '@sk-job-pilot/shared';
 import { sendSuccess } from '../utils/response.js';
 
 export async function fetchOnboardingState(req: Request, res: Response): Promise<void> {
@@ -18,8 +18,8 @@ export async function fetchOnboardingState(req: Request, res: Response): Promise
 }
 
 export async function handleUpdateOnboardingStep(req: Request, res: Response): Promise<void> {
-  const { step } = req.body;
-  const state = await updateOnboardingStep(Number(step));
+  const { step } = updateOnboardingStepSchema.parse(req.body);
+  const state = await updateOnboardingStep(step);
   sendSuccess(res, state, 'Onboarding step updated successfully', 200, req);
 }
 
@@ -56,11 +56,15 @@ export async function fetchAutomationConfig(req: Request, res: Response): Promis
 
 export async function handleUpdateAutomationConfig(req: Request, res: Response): Promise<void> {
   const validated = automationConfigSchema.parse(req.body);
+  const safeConfig = {
+    ...validated,
+    mode: validated.mode === 'safe_auto_apply' ? 'prepare_and_review' as const : validated.mode,
+  };
   let config = await AutomationConfigurationModel.findOne();
   if (!config) {
-    config = await AutomationConfigurationModel.create(validated);
+    config = await AutomationConfigurationModel.create({ ...safeConfig, autoSubmitSafeApplications: false });
   } else {
-    Object.assign(config, validated);
+    Object.assign(config, safeConfig, { autoSubmitSafeApplications: false });
     await config.save();
   }
   sendSuccess(res, config, 'Automation configuration updated successfully', 200, req);

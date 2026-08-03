@@ -8,6 +8,7 @@ import { AppError } from '../errors/app-error.js';
 import { sendSuccess, sendPaginated } from '../utils/response.js';
 import { extractDocumentText } from '../services/extraction/extractor-dispatcher.js';
 import { parseResumeText } from '../services/parsing/deterministic-parser.service.js';
+import { syncResumeIntoCandidateProfile } from '../services/onboarding.service.js';
 
 export async function uploadResume(req: Request, res: Response): Promise<void> {
   if (!req.file) {
@@ -99,7 +100,11 @@ export async function uploadResume(req: Request, res: Response): Promise<void> {
     version: '1.0',
   });
 
-  sendSuccess(res, resume, 'Resume uploaded and processed successfully', 201, req);
+  if (parsingStatus === 'parsed') {
+    await syncResumeIntoCandidateProfile(resume);
+  }
+
+  sendSuccess(res, resume, 'Resume uploaded, parsed, and synchronized to candidate profile', 201, req);
 }
 
 export async function getResumes(req: Request, res: Response): Promise<void> {

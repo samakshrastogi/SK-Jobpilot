@@ -57,6 +57,106 @@ export async function updateOnboardingStep(step: number) {
   return state.toJSON();
 }
 
+interface ParsedResumeForProfile {
+  name: string;
+  rawText: string;
+  parsedContent: {
+    summary?: string;
+    skills?: string[];
+    contactInfo?: { email?: string; phone?: string; urls?: string[] };
+  };
+}
+
+const SKILL_GROUPS = {
+  languages: new Set(['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust']),
+  backend: new Set(['Node.js', 'Express', 'Python', 'Java', 'Go', 'REST', 'GraphQL']),
+  frontend: new Set(['React', 'Next.js', 'HTML', 'CSS', 'Tailwind']),
+  databases: new Set(['MongoDB', 'PostgreSQL', 'SQL', 'Redis']),
+  cloudDevOps: new Set(['Docker', 'Kubernetes', 'AWS', 'GCP', 'Azure', 'Linux']),
+};
+
+function inferCandidateName(resume: ParsedResumeForProfile): string {
+  const firstEvidenceLine = resume.rawText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line.length >= 2 && line.length <= 100 && !line.includes('@') && !/^\+?[\d\s().-]+$/.test(line));
+
+  return firstEvidenceLine || resume.name.trim() || 'Candidate';
+}
+
+export async function syncResumeIntoCandidateProfile(resume: ParsedResumeForProfile) {
+  const parsed = resume.parsedContent || {};
+  const skills = Array.from(new Set(parsed.skills || []));
+  const urls = parsed.contactInfo?.urls || [];
+  const categorized = {
+    languages: skills.filter((skill) => SKILL_GROUPS.languages.has(skill)),
+    backend: skills.filter((skill) => SKILL_GROUPS.backend.has(skill)),
+    frontend: skills.filter((skill) => SKILL_GROUPS.frontend.has(skill)),
+    databases: skills.filter((skill) => SKILL_GROUPS.databases.has(skill)),
+    cloudDevOps: skills.filter((skill) => SKILL_GROUPS.cloudDevOps.has(skill)),
+    aiAutomation: skills.filter((skill) => /AI|Gemini|LangChain|LangGraph|RAG/i.test(skill)),
+    tools: skills.filter((skill) => !Object.values(SKILL_GROUPS).some((group) => group.has(skill))),
+  };
+
+  let profile = await CandidateProfileModel.findOne().sort({ createdAt: 1 });
+  if (!profile && parsed.contactInfo?.email) {
+    profile = await CandidateProfileModel.create({
+      personalInfo: {
+        fullName: inferCandidateName(resume),
+        email: parsed.contactInfo.email,
+        phone: parsed.contactInfo?.phone || '',
+        location: '',
+        linkedinUrl: urls.find((url) => /linkedin\.com/i.test(url)) || '',
+        githubUrl: urls.find((url) => /github\.com/i.test(url)) || '',
+        portfolioUrl: urls.find((url) => !/linkedin\.com|github\.com/i.test(url)) || '',
+      },
+      professionalInfo: {
+        currentTitle: '',
+        summary: parsed.summary || '',
+        totalExperienceMonths: 0,
+        preferredRoles: [],
+        preferredLocations: [],
+        remotePreference: 'open',
+        employmentTypes: ['Full-time'],
+        expectedSalary: { amount: 0, currency: 'INR', period: 'yearly' },
+        noticePeriodDays: 0,
+        willingToRelocate: false,
+      },
+      skills: categorized,
+      experience: [],
+      education: [],
+      projects: [],
+      certificates: [],
+      jobPreferences: {
+        targetTitles: [], includedKeywords: skills, excludedKeywords: [], preferredIndustries: [],
+        preferredCompanies: [], excludedCompanies: [], minExperienceYears: 0,
+        maxExperienceYears: 3, preferredWorkModes: ['remote', 'hybrid'], sponsorshipRequired: false,
+        relocationCountries: ['India'],
+      },
+    });
+  } else if (profile) {
+    if (parsed.contactInfo?.email) profile.personalInfo.email = parsed.contactInfo.email;
+    if (parsed.contactInfo?.phone) profile.personalInfo.phone = parsed.contactInfo.phone;
+    if (parsed.summary) profile.professionalInfo.summary = parsed.summary;
+    for (const [category, values] of Object.entries(categorized)) {
+      const key = category as keyof typeof categorized;
+      profile.skills[key] = Array.from(new Set([...(profile.skills[key] || []), ...values]));
+    }
+    profile.jobPreferences.includedKeywords = Array.from(new Set([
+      ...((profile.jobPreferences.includedKeywords as string[] | undefined) || []),
+      ...skills,
+    ]));
+    await profile.save();
+  }
+
+  let state = await OnboardingStateModel.findOne();
+  if (!state) state = await OnboardingStateModel.create({ step: 2 });
+  state.resumeUploaded = true;
+  state.step = Math.max(state.step, 2);
+  await state.save();
+
+  return profile?.toJSON() || null;
+}
 export async function recommendRolesFromProfile() {
   const profile = await CandidateProfileModel.findOne().sort({ createdAt: 1 });
   const masterResume = await ResumeModel.findOne({ isMaster: true });
@@ -149,13 +249,20 @@ export async function selectTargetRoles(roleTitles: string[]) {
     minimumMatchScore: 75,
     maximumRequiredExperienceYears: 5,
     priority: 1,
-    autoApplyEnabled: true,
+    autoApplyEnabled: false,
     active: true,
   }));
 
   const saved = await TargetRoleModel.insertMany(newRoles);
 
-  let state = await OnboardingStateModel.findOne();
+  const profile = await CandidateProfileModel.findOne().sort({ createdAt: 1 });
+  if (profile) {
+    profile.professionalInfo.preferredRoles = roleTitles;
+    profile.jobPreferences.targetTitles = roleTitles;
+    await profile.save();
+  }
+
+  const state = await OnboardingStateModel.findOne();
   if (state) {
     state.rolesSelected = true;
     state.step = Math.max(state.step, 4);

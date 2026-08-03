@@ -9,25 +9,34 @@ import { executeHourlyDiscoveryPipeline } from '../services/hourly-discovery.ser
 import { env } from '../config/env.js';
 
 describe('Onboarding & Hourly Discovery Automation Engine Tests', () => {
+  let isDbAvailable = false;
+
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(env.MONGODB_URI);
+    try {
+      if (mongoose.connection.readyState === 0) {
+        await mongoose.connect(env.MONGODB_URI, { serverSelectionTimeoutMS: 1000 });
+      }
+      isDbAvailable = mongoose.connection.readyState === 1;
+    } catch {
+      isDbAvailable = false;
     }
   });
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
+    if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect();
     }
   });
 
-  it('should initialize and retrieve onboarding state', async () => {
+  it('should initialize and retrieve onboarding state', async (ctx) => {
+    if (!isDbAvailable) return ctx.skip();
     const state = await getOrCreateOnboardingState();
     expect(state).toBeDefined();
     expect(state.step).toBeGreaterThanOrEqual(1);
   });
 
-  it('should generate evidence-grounded role recommendations', async () => {
+  it('should generate evidence-grounded role recommendations', async (ctx) => {
+    if (!isDbAvailable) return ctx.skip();
     const recs = await recommendRolesFromProfile();
     expect(recs).toBeDefined();
     expect(Array.isArray(recs)).toBe(true);
@@ -35,14 +44,16 @@ describe('Onboarding & Hourly Discovery Automation Engine Tests', () => {
     expect(recs[0].roleTitle).toBeDefined();
   });
 
-  it('should select target roles for candidate', async () => {
+  it('should select target roles for candidate', async (ctx) => {
+    if (!isDbAvailable) return ctx.skip();
     const selected = await selectTargetRoles(['Backend Engineer', 'Full Stack Engineer']);
     expect(selected).toBeDefined();
     expect(selected.length).toBe(2);
     expect(selected[0].primaryTitle).toBe('Backend Engineer');
   });
 
-  it('should execute hourly discovery pipeline', async () => {
+  it('should execute hourly discovery pipeline', async (ctx) => {
+    if (!isDbAvailable) return ctx.skip();
     const res = await executeHourlyDiscoveryPipeline();
     expect(res).toBeDefined();
     expect(res.status).toBeDefined();
