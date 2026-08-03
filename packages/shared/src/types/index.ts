@@ -491,7 +491,7 @@ export interface AIHealthStatus {
 export interface DiscoverySource {
   id: string;
   name: string;
-  providerType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'generic_html' | 'generic_browser' | 'rss' | 'manual' | 'import';
+  providerType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'jobicy' | 'remotive' | 'generic_html' | 'generic_browser' | 'rss' | 'manual' | 'import';
   companyName: string;
   baseUrl?: string;
   careersUrl: string;

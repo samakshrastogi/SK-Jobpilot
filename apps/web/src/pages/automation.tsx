@@ -56,7 +56,7 @@ export function AutomationPage() {
       const response = await runDiscoveryNow();
       const result = response.data;
       if (result?.status === 'skipped') toast.warning(result.summary || 'Agent run skipped');
-      else toast.success(`Agent completed: ${result?.prepared || 0} prepared, ${result?.skipped || 0} skipped`);
+      else toast.success(`Agent completed: ${result?.discovered || 0} discovered, ${result?.prepared || 0} prepared, ${result?.skipped || 0} skipped`);
       await refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Discovery run failed');
@@ -70,7 +70,7 @@ export function AutomationPage() {
 
     <div className="grid md:grid-cols-4 gap-4">
       <StatusCard label="Automation" value={isLoading ? 'Loading…' : config?.enabled ? 'ACTIVE' : 'PAUSED'} badge={config?.frequency || 'unknown'} healthy={Boolean(config?.enabled)} />
-      <StatusCard label="Latest agent run" value={agentStatus?.latestRun?.status?.toUpperCase() || 'NOT RUN'} badge={`${agentStatus?.latestRun?.prepared || 0} prepared`} healthy={agentStatus?.latestRun?.status !== 'failed'} />
+      <StatusCard label="Latest agent run" value={agentStatus?.latestRun?.status?.toUpperCase() || 'NOT RUN'} badge={`${agentStatus?.latestRun?.discovered || 0} found / ${agentStatus?.latestRun?.prepared || 0} prepared`} healthy={agentStatus?.latestRun?.status !== 'failed'} />
       <StatusCard label="Daily target" value={`${config?.maxApplicationsPerDay || 0} jobs`} badge={`Min ${config?.minimumMatchScore || 0}%`} healthy />
       <StatusCard label="Review queue" value={`${reviewCount} pending`} badge={reviewCount ? 'Needs action' : 'Clear'} healthy={!reviewCount} />
     </div>

@@ -213,11 +213,15 @@ Rules:
     ].map((title) => title.trim()).filter(Boolean);
     const skillGroups = profile?.skills || {};
     const skills = Array.from(new Set(Object.values(skillGroups).flatMap((value) => Array.isArray(value) ? value : [])));
+    const hasBackend = Boolean(skillGroups.backend?.length);
+    const hasFrontend = Boolean(skillGroups.frontend?.length);
+    const hasAi = Boolean(skillGroups.aiAutomation?.length);
     const skillDerivedTitles = [
-      skillGroups.backend?.[0] ? `${skillGroups.backend[0]} Developer` : '',
-      skillGroups.frontend?.[0] ? `${skillGroups.frontend[0]} Developer` : '',
-      skillGroups.aiAutomation?.[0] ? `${skillGroups.aiAutomation[0]} Engineer` : '',
-      skillGroups.languages?.[0] ? `${skillGroups.languages[0]} Developer` : '',
+      hasBackend && hasFrontend ? 'Full Stack Developer' : '',
+      hasBackend ? 'Backend Developer' : '',
+      skills.length ? 'Software Engineer' : '',
+      hasAi ? 'AI Automation Engineer' : '',
+      hasFrontend ? 'Frontend Developer' : '',
     ];
     const titles = Array.from(new Set([...profileTitles, ...skillDerivedTitles].filter(Boolean)));
     if (!titles.length) {

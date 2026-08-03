@@ -4,6 +4,8 @@ import { fetchGreenhouseJobs } from '../providers/greenhouse.provider.js';
 import { fetchLeverJobs } from '../providers/lever.provider.js';
 import { fetchAshbyJobs } from '../providers/ashby.provider.js';
 import { fetchWorkableJobs } from '../providers/workable.provider.js';
+import { fetchJobicyJobs } from '../providers/jobicy.provider.js';
+import { fetchRemotiveJobs } from '../providers/remotive.provider.js';
 import { fetchRssJobs } from '../providers/rss.provider.js';
 import { fetchGenericHtmlJob } from '../providers/generic-html.provider.js';
 import { processAndDeduplicateJobs } from './deduplication.service.js';
@@ -11,6 +13,7 @@ import { sseActivityManager } from './sse-activity.service.js';
 import { logger } from '../../utils/logger.js';
 import { AppError } from '../../errors/app-error.js';
 import mongoose from 'mongoose';
+import { TargetRoleModel } from '../../models/target-role.model.js';
 
 export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 'scheduled' = 'manual') {
   if (!mongoose.Types.ObjectId.isValid(sourceId)) {
@@ -41,6 +44,8 @@ export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 
 
   try {
     let rawJobs: any[] = [];
+    const roles = await TargetRoleModel.find({ active: true }).select('primaryTitle searchAliases').lean();
+    const searchTerms = roles.flatMap((role) => [role.primaryTitle, ...(role.searchAliases || [])]);
 
     switch (source.providerType) {
       case 'greenhouse':
@@ -54,6 +59,12 @@ export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 
         break;
       case 'workable':
         rawJobs = await fetchWorkableJobs(source.boardId || source.careersUrl, source.companyName);
+        break;
+      case 'jobicy':
+        rawJobs = await fetchJobicyJobs(searchTerms);
+        break;
+      case 'remotive':
+        rawJobs = await fetchRemotiveJobs(searchTerms);
         break;
       case 'rss':
         rawJobs = await fetchRssJobs(source.careersUrl, source.companyName);

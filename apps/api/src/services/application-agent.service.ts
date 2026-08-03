@@ -69,7 +69,7 @@ async function runAgent(trigger: 'scheduled' | 'manual') {
       run.status = 'skipped'; run.summary = 'Candidate profile is required before the agent can evaluate jobs.'; run.completedAt = new Date(); await run.save(); return run.toJSON();
     }
     const discovery = await executeHourlyDiscoveryPipeline();
-    run.discovered = 'jobsInserted' in discovery ? discovery.jobsInserted || 0 : 0;
+    run.discovered = 'jobsDiscovered' in discovery ? discovery.jobsDiscovered || 0 : 0;
     if (config.mode === 'discovery_only') {
       run.status = 'completed'; run.summary = 'Discovery-only run completed.'; run.completedAt = new Date(); await run.save(); return run.toJSON();
     }
