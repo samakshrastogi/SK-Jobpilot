@@ -4,7 +4,8 @@ import type { DiscoveredRawJob } from '../providers/greenhouse.provider.js';
 
 export async function processAndDeduplicateJobs(
   rawJobs: DiscoveredRawJob[],
-  sourceId: string
+  sourceId: string,
+  discoveryMethod: 'manual' | 'scraper' | 'api' = 'scraper'
 ): Promise<{ inserted: number; duplicates: number }> {
   let inserted = 0;
   let duplicates = 0;
@@ -45,7 +46,7 @@ export async function processAndDeduplicateJobs(
         description: raw.description,
         postedDate: raw.postedDate ? new Date(raw.postedDate) : new Date(),
         dateDiscovered: new Date(),
-        discoveryMethod: 'scraper',
+        discoveryMethod,
         processingStatus: 'discovered',
         matchScore: 0,
         savedStatus: false,

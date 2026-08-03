@@ -23,7 +23,10 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: [env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+      origin(origin, callback) {
+        const allowedWebOrigins = new Set([env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']);
+        callback(null, !origin || allowedWebOrigins.has(origin) || origin.startsWith('chrome-extension://'));
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })

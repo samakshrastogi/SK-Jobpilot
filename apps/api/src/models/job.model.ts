@@ -66,7 +66,7 @@ const jobSchema = new Schema<IJobDocument>(
     salaryMin: { type: Number, default: 0 },
     salaryMax: { type: Number, default: 0 },
     salaryCurrency: { type: String, default: 'USD' },
-    description: { type: String, required: true },
+    description: { type: String, default: '' },
     responsibilities: [{ type: String }],
     requiredSkills: [{ type: String }],
     preferredSkills: [{ type: String }],

@@ -5,6 +5,7 @@ import {
   runDiscoverySource,
   fetchDiscoveryRuns,
   streamActivityEvents,
+  captureBrowserJobs,
 } from '../controllers/discovery.controller.js';
 import { asyncHandler } from '../middlewares/async-handler.js';
 
@@ -15,3 +16,4 @@ discoveryRouter.post('/discovery/sources', asyncHandler(createDiscoverySource));
 discoveryRouter.post('/discovery/sources/:id/run', asyncHandler(runDiscoverySource));
 discoveryRouter.get('/discovery/runs', asyncHandler(fetchDiscoveryRuns));
 discoveryRouter.get('/activity/stream', streamActivityEvents);
+discoveryRouter.post('/discovery/browser-capture', asyncHandler(captureBrowserJobs));

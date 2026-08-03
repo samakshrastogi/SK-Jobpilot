@@ -3,7 +3,9 @@ import { DiscoverySourceModel } from '../models/discovery-source.model.js';
 import { DiscoveryRunModel } from '../models/discovery-run.model.js';
 import { executeDiscoveryRun } from '../discovery/services/scheduler.service.js';
 import { sseActivityManager } from '../discovery/services/sse-activity.service.js';
-import { createDiscoverySourceSchema } from '@sk-job-pilot/shared';
+import { browserCaptureBatchSchema, createDiscoverySourceSchema } from '@sk-job-pilot/shared';
+import { processAndDeduplicateJobs } from '../discovery/services/deduplication.service.js';
+import type { DiscoveredRawJob } from '../discovery/providers/greenhouse.provider.js';
 import { sendSuccess, sendPaginated } from '../utils/response.js';
 import { AppError } from '../errors/app-error.js';
 import mongoose from 'mongoose';
@@ -57,4 +59,23 @@ export async function fetchDiscoveryRuns(req: Request, res: Response): Promise<v
 export async function streamActivityEvents(req: Request, res: Response): Promise<void> {
   const clientId = `sse-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   sseActivityManager.addClient(clientId, res);
+}
+
+export async function captureBrowserJobs(req: Request, res: Response): Promise<void> {
+  const { jobs } = browserCaptureBatchSchema.parse(req.body);
+  const rawJobs: DiscoveredRawJob[] = jobs.map((job) => ({
+    externalSource: job.platform,
+    externalSourceId: job.sourceJobId || job.sourceUrl,
+    jobTitle: job.title,
+    companyName: job.company,
+    location: job.location || 'Not specified',
+    workMode: job.workMode,
+    employmentType: job.employmentType,
+    description: job.description,
+    sourceUrl: job.sourceUrl,
+    applicationUrl: job.applyUrl || job.sourceUrl,
+    postedDate: job.postedDate,
+  }));
+  const result = await processAndDeduplicateJobs(rawJobs, 'browser-capture', 'api');
+  sendSuccess(res, { received: jobs.length, ...result }, 'Browser jobs captured successfully', 201, req);
 }

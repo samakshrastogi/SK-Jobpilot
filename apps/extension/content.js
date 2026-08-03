@@ -5,6 +5,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'DETECT_FIELDS') {
     const fields = detectFormFields();
     sendResponse({ success: true, fields });
+  } else if (request.action === 'CAPTURE_JOB') {
+    sendResponse(captureCurrentJob());
   } else if (request.action === 'FILL_FIELDS') {
     const filledCount = fillFormFields(request.fieldData);
     sendResponse({ success: true, filledCount });
@@ -84,4 +86,30 @@ function fillFormFields(fieldData) {
   });
 
   return filled;
+}
+
+function captureCurrentJob() {
+  const host = location.hostname.toLowerCase();
+  const platform = host.includes('linkedin.') ? 'linkedin' : host.includes('indeed.') ? 'indeed' : host.includes('wellfound.') ? 'wellfound' : 'company_ats';
+  const restricted = ['linkedin', 'indeed', 'wellfound'].includes(platform);
+  if (restricted) return { success: true, restricted, platform, sourceUrl: location.href };
+
+  const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+  for (const script of scripts) {
+    try {
+      const parsed = JSON.parse(script.textContent || '{}');
+      const items = Array.isArray(parsed) ? parsed : parsed['@graph'] || [parsed];
+      const job = items.find((item) => item && item['@type'] === 'JobPosting');
+      if (!job) continue;
+      const company = typeof job.hiringOrganization === 'string' ? job.hiringOrganization : job.hiringOrganization?.name;
+      const locality = job.jobLocation?.address?.addressLocality || job.jobLocation?.[0]?.address?.addressLocality || '';
+      return { success: true, restricted: false, job: {
+        platform, title: job.title || '', company: company || '', location: locality,
+        description: (job.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        sourceUrl: location.href, applyUrl: location.href, captureMethod: 'structured_data',
+        postedDate: job.datePosted ? new Date(job.datePosted).toISOString() : undefined,
+      }};
+    } catch { /* Ignore invalid publisher JSON-LD. */ }
+  }
+  return { success: true, restricted: false, job: { platform, title: document.title, company: '', sourceUrl: location.href, applyUrl: location.href, captureMethod: 'manual' } };
 }

@@ -394,6 +394,25 @@ export const createDiscoverySourceSchema = z.object({
 
 export const updateDiscoverySourceSchema = createDiscoverySourceSchema.partial();
 
+export const browserCapturedJobSchema = z.object({
+  platform: z.enum(['linkedin', 'indeed', 'wellfound', 'naukri', 'instahyre', 'company_ats', 'other']),
+  sourceJobId: z.string().trim().max(200).optional().default(''),
+  title: z.string().trim().min(2, 'Job title is required').max(300),
+  company: z.string().trim().min(1, 'Company name is required').max(300),
+  location: z.string().trim().max(300).optional().default(''),
+  description: z.string().trim().max(200000).optional().default(''),
+  sourceUrl: z.string().url('A valid job URL is required'),
+  applyUrl: z.string().url().optional(),
+  workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().default('onsite'),
+  employmentType: z.enum(['full_time', 'part_time', 'contract', 'freelance', 'internship']).optional().default('full_time'),
+  postedDate: z.string().datetime().optional(),
+  captureMethod: z.enum(['structured_data', 'manual']).default('manual'),
+});
+
+export const browserCaptureBatchSchema = z.object({
+  jobs: z.array(browserCapturedJobSchema).min(1).max(50),
+});
+
 // Phase 4 Interview Preparation & Mock Schemas
 export const createInterviewPrepSchema = z.object({
   jobId: z.string().min(1, 'Job reference is required'),

@@ -37,6 +37,7 @@
       cursor: pointer;
       margin-bottom: 8px;
     }
+    input { width: 100%; box-sizing: border-box; background: #020617; color: #f1f5f9; border: 1px solid #334155; border-radius: 5px; padding: 8px; margin-bottom: 7px; }
     button:hover {
       background-color: #4338ca;
     }
@@ -71,11 +72,18 @@
 </head>
 <body>
   <h2>SK JobPilot Form Assistant</h2>
-  <div className="status" id="status">Ready to detect job application fields...</div>
+  <div class="status" id="status">Ready to detect job application fields...</div>
 
+  <button id="captureBtn">Capture Current Job</button>
+  <div id="captureForm" style="display:none;">
+    <input id="jobTitle" placeholder="Job title" maxlength="300">
+    <input id="jobCompany" placeholder="Company" maxlength="300">
+    <input id="jobLocation" placeholder="Location (optional)" maxlength="300">
+    <button id="saveJobBtn">Save Confirmed Job</button>
+  </div>
   <button id="detectBtn">Detect Application Form Fields</button>
 
-  <div className="field-list" id="fieldList" style="display: none;">
+  <div class="field-list" id="fieldList" style="display: none;">
     <!-- Populated dynamically -->
   </div>
 
