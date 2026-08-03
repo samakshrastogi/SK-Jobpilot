@@ -10,18 +10,27 @@ export interface StatCardProps {
   subtitle?: string;
 }
 
-export function StatCard({ title, value, icon, trend, trendType = 'positive', subtitle }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon,
+  trend,
+  trendType = 'positive',
+  subtitle,
+}: StatCardProps) {
   const trendColorClass =
     trendType === 'positive'
       ? 'text-emerald-400'
       : trendType === 'negative'
-      ? 'text-rose-400'
-      : 'text-slate-400';
+        ? 'text-rose-400'
+        : 'text-slate-400';
 
   return (
     <Card className="relative overflow-hidden group hover:border-indigo-500/40 transition-colors">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          {title}
+        </span>
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:scale-105 transition-transform">
           {icon}
         </div>

@@ -58,7 +58,10 @@ export function AgentActivityPage() {
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-indigo-400" />
                 <span className="text-xs font-bold text-indigo-300">{log.agentName}</span>
-                <Badge variant={log.status === 'success' ? 'success' : 'info'} className="text-[10px] uppercase">
+                <Badge
+                  variant={log.status === 'success' ? 'success' : 'info'}
+                  className="text-[10px] uppercase"
+                >
                   {log.status}
                 </Badge>
               </div>

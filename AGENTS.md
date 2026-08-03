@@ -39,6 +39,7 @@ This document provides mandatory architectural rules, conventions, and operation
 All API responses must strictly follow the standard JSON envelope structure defined in `@sk-job-pilot/shared`:
 
 ### Success Format:
+
 ```json
 {
   "success": true,
@@ -52,6 +53,7 @@ All API responses must strictly follow the standard JSON envelope structure defi
 ```
 
 ### Error Format:
+
 ```json
 {
   "success": false,

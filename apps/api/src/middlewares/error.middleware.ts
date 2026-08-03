@@ -5,12 +5,7 @@ import { sendError } from '../utils/response.js';
 import { logger } from '../utils/logger.js';
 import { env } from '../config/env.js';
 
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   logger.error({ err, path: req.path, method: req.method }, 'Error encountered during request');
 
   if (err instanceof AppError) {

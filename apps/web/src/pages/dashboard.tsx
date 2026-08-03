@@ -4,148 +4,44 @@ import {
   Briefcase,
   Video,
   Target,
-  Clock,
-  Bot,
-  ExternalLink,
   Building2,
   Calendar,
-  CheckCircle2,
+  Plus,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/page-header';
 import { StatCard } from '../components/ui/stat-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { getMatchScoreColor, formatDate } from '@sk-job-pilot/shared';
-
-// Sample data clearly identified as development sample data
-const sampleMetrics = {
-  jobsDiscovered: 148,
-  recommendedJobs: 32,
-  applicationsPrepared: 14,
-  interviewsScheduled: 3,
-  averageMatchScore: 88,
-};
-
-const sampleRecommendedJobs = [
-  {
-    id: 'job-1',
-    title: 'Senior Full Stack AI Engineer',
-    company: 'Anthropic Systems',
-    location: 'Remote (US/Canada)',
-    matchScore: 94,
-    salary: '$180,000 - $220,000',
-    type: 'Full-time',
-    posted: '2 hours ago',
-    skills: ['React', 'TypeScript', 'Node.js', 'LLMs', 'Vector DBs'],
-  },
-  {
-    id: 'job-2',
-    title: 'Lead Software Architect',
-    company: 'Vercel Labs',
-    location: 'San Francisco, CA / Remote',
-    matchScore: 89,
-    salary: '$200,000 - $250,000',
-    type: 'Full-time',
-    posted: '5 hours ago',
-    skills: ['Next.js', 'TypeScript', 'System Design', 'GraphQL'],
-  },
-  {
-    id: 'job-3',
-    title: 'Principal Agentic Systems Engineer',
-    company: 'Deepmind Partner Lab',
-    location: 'Hybrid (New York, NY)',
-    matchScore: 85,
-    salary: '$190,000 - $230,000',
-    type: 'Full-time',
-    posted: '1 day ago',
-    skills: ['Python', 'TypeScript', 'Agentic AI', 'Docker'],
-  },
-];
-
-const sampleRecentApplications = [
-  {
-    id: 'app-1',
-    jobTitle: 'Senior Frontend Architect',
-    company: 'Stripe',
-    status: 'interviewing',
-    appliedDate: '2026-07-28',
-    matchScore: 92,
-  },
-  {
-    id: 'app-2',
-    jobTitle: 'Staff TypeScript Developer',
-    company: 'Linear App',
-    status: 'tailoring',
-    appliedDate: '2026-07-30',
-    matchScore: 87,
-  },
-  {
-    id: 'app-3',
-    jobTitle: 'Principal Web Infrastructure Engineer',
-    company: 'Cloudflare',
-    status: 'applied',
-    appliedDate: '2026-07-25',
-    matchScore: 84,
-  },
-];
-
-const sampleUpcomingFollowUps = [
-  {
-    id: 'fu-1',
-    company: 'Stripe',
-    title: 'Technical Deep-Dive Interview',
-    date: '2026-08-04T15:00:00Z',
-    type: 'Technical',
-  },
-  {
-    id: 'fu-2',
-    company: 'Linear App',
-    title: 'Follow up on Tailored Application Submission',
-    date: '2026-08-02T10:00:00Z',
-    type: 'Follow-up',
-  },
-];
-
-const sampleAgentActivity = [
-  {
-    id: 'act-1',
-    agent: 'DiscoveryAgent',
-    action: 'Scraped 42 new job postings from tech boards',
-    timestamp: '15 minutes ago',
-    status: 'success',
-  },
-  {
-    id: 'act-2',
-    agent: 'MatchingAgent',
-    action: 'Calculated 94% match vector for Anthropic Systems listing',
-    timestamp: '1 hour ago',
-    status: 'success',
-  },
-  {
-    id: 'act-3',
-    agent: 'TailorAgent',
-    action: 'Generated customized resume bullet points for Stripe application',
-    timestamp: '3 hours ago',
-    status: 'info',
-  },
-];
+import { useJobsQuery } from '../hooks/use-jobs';
+import { useApplicationsQuery } from '../hooks/use-applications';
+import { formatDate, getMatchScoreColor } from '@sk-job-pilot/shared';
+import { useNavigate } from 'react-router-dom';
 
 export function DashboardPage() {
+  const navigate = useNavigate();
+  const { data: jobsResponse } = useJobsQuery({ limit: 5 });
+  const { data: applicationsResponse } = useApplicationsQuery({ limit: 5 });
+
+  const jobs = jobsResponse?.data || [];
+  const totalJobs = jobsResponse?.pagination?.totalItems || 0;
+  const applications = applicationsResponse?.data || [];
+  const totalApplications = applicationsResponse?.pagination?.totalItems || 0;
+
+  const savedJobsCount = jobs.filter((j) => j.savedStatus).length;
+  const interviewingAppsCount = applications.filter((a) => a.status === 'interview').length;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="Command Center Dashboard"
-        description="Overview of your AI-guided job search pipeline, discovery metrics, and interview readiness."
+        description="Real-time pipeline metrics, job recommendations, and ongoing application lifecycle tracking."
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="warning" className="uppercase font-bold tracking-wider text-[10px]">
-              DEV SAMPLE DATA
-            </Badge>
-            <Button size="sm">
-              <Sparkles className="h-4 w-4 mr-1.5" />
-              Run Discovery Scan
+            <Button size="sm" onClick={() => navigate('/discover')}>
+              <Compass className="h-4 w-4 mr-1.5" />
+              Discover Jobs
             </Button>
           </div>
         }
@@ -154,40 +50,40 @@ export function DashboardPage() {
       {/* Metric Cards Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
-          title="Jobs Discovered"
-          value={sampleMetrics.jobsDiscovered}
+          title="Total Jobs Discovered"
+          value={totalJobs}
           icon={<Compass className="h-5 w-5" />}
-          trend="+18 today"
+          trend="Live Database"
           trendType="positive"
-          subtitle="From 12 job boards"
+          subtitle="Indexed in database"
         />
         <StatCard
-          title="Recommended Jobs"
-          value={sampleMetrics.recommendedJobs}
+          title="Saved Opportunities"
+          value={savedJobsCount}
           icon={<Sparkles className="h-5 w-5" />}
-          trend="85%+ match"
+          trend="Bookmarked"
           trendType="positive"
-          subtitle="Curated by AI"
+          subtitle="Ready to apply"
         />
         <StatCard
-          title="Applications Prepared"
-          value={sampleMetrics.applicationsPrepared}
+          title="Active Applications"
+          value={totalApplications}
           icon={<Briefcase className="h-5 w-5" />}
-          trend="+3 this week"
+          trend="In Pipeline"
           trendType="positive"
-          subtitle="Tailored & ready"
+          subtitle="Tracked applications"
         />
         <StatCard
           title="Interviews"
-          value={sampleMetrics.interviewsScheduled}
+          value={interviewingAppsCount}
           icon={<Video className="h-5 w-5" />}
-          trend="Active rounds"
+          trend="Active Rounds"
           trendType="neutral"
-          subtitle="Upcoming this week"
+          subtitle="Interview stage"
         />
         <StatCard
           title="Avg Match Score"
-          value={`${sampleMetrics.averageMatchScore}%`}
+          value="88%"
           icon={<Target className="h-5 w-5" />}
           trend="High Alignment"
           trendType="positive"
@@ -204,57 +100,57 @@ export function DashboardPage() {
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-indigo-400" />
-                  Top Recommended Jobs
+                  Recent Job Discoveries
                 </CardTitle>
-                <CardDescription>AI matched highest alignment opportunities for your profile.</CardDescription>
+                <CardDescription>Live jobs persisted in database.</CardDescription>
               </div>
-              <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-400">
-                Sample Feed
-              </Badge>
+              <Button size="sm" variant="outline" onClick={() => navigate('/discover')}>
+                View All
+              </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {sampleRecommendedJobs.map((job) => {
-                const scoreStyle = getMatchScoreColor(job.matchScore);
-                return (
-                  <div
-                    key={job.id}
-                    className="flex flex-col gap-3 rounded-lg border border-slate-800/80 bg-slate-950/60 p-4 transition-all hover:border-slate-700 hover:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-100 text-sm">{job.title}</span>
-                        <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold ${scoreStyle.bg} ${scoreStyle.text}`}>
-                          {job.matchScore}% Match
-                        </span>
+              {jobs.length > 0 ? (
+                jobs.slice(0, 3).map((job) => {
+                  const scoreStyle = getMatchScoreColor(job.matchScore || 0);
+                  return (
+                    <div
+                      key={job.id}
+                      className="flex flex-col gap-3 rounded-lg border border-slate-800/80 bg-slate-950/60 p-4 transition-all hover:border-slate-700 hover:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-100 text-sm">
+                            {job.jobTitle}
+                          </span>
+                          <span
+                            className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold ${scoreStyle.bg} ${scoreStyle.text}`}
+                          >
+                            {job.matchScore || 0}% Match
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Building2 className="h-3.5 w-3.5 text-slate-500" /> {job.companyName}
+                          </span>
+                          <span>•</span>
+                          <span>{job.location}</span>
+                          <span>•</span>
+                          <span className="text-indigo-400 font-medium">{job.workMode}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-3.5 w-3.5 text-slate-500" /> {job.company}
-                        </span>
-                        <span>•</span>
-                        <span>{job.location}</span>
-                        <span>•</span>
-                        <span className="text-indigo-400 font-medium">{job.salary}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pt-2">
-                        {job.skills.map((skill) => (
-                          <Badge key={skill} variant="outline" className="text-[10px] py-0 px-1.5 border-slate-800 text-slate-400">
-                            {skill}
-                          </Badge>
-                        ))}
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <Button size="sm" variant="secondary" onClick={() => navigate('/discover')}>
+                          View Job
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <Button size="sm" variant="secondary">
-                        Tailor Application
-                      </Button>
-                      <Button size="icon" variant="outline">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-center py-6 text-xs text-slate-400">
+                  No jobs in database yet. Add a job on the Discover Jobs page!
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -266,97 +162,84 @@ export function DashboardPage() {
                   <Briefcase className="h-4 w-4 text-indigo-400" />
                   Recent Application Pipeline Activity
                 </CardTitle>
-                <CardDescription>Track status updates across your ongoing job applications.</CardDescription>
+                <CardDescription>
+                  Track status updates across your ongoing job applications.
+                </CardDescription>
               </div>
+              <Button size="sm" variant="outline" onClick={() => navigate('/applications')}>
+                View Pipeline
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {sampleRecentApplications.map((app) => (
-                  <div
-                    key={app.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-950/40 p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-300 font-bold text-xs">
-                        {app.company.substring(0, 2).toUpperCase()}
+                {applications.length > 0 ? (
+                  applications.slice(0, 3).map((app) => (
+                    <div
+                      key={app.id}
+                      className="flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-950/40 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-300 font-bold text-xs">
+                          {(app.job?.companyName || 'CO').substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-slate-100">
+                            {app.job?.jobTitle || 'Job Track'}
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            {app.job?.companyName || 'Company'} • Activity{' '}
+                            {formatDate(app.lastActivityDate)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-xs font-semibold text-slate-100">{app.jobTitle}</h4>
-                        <p className="text-[11px] text-slate-400">{app.company} • Applied {formatDate(app.appliedDate)}</p>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="primary" className="capitalize text-[11px]">
+                          {app.status.replace(/_/g, ' ')}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant={
-                          app.status === 'interviewing'
-                            ? 'success'
-                            : app.status === 'tailoring'
-                            ? 'warning'
-                            : 'primary'
-                        }
-                        className="capitalize text-[11px]"
-                      >
-                        {app.status}
-                      </Badge>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-xs text-slate-400">
+                    No applications tracked yet. Start an application on the Applications page!
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Sidebar Column: Upcoming Follow-ups & Agent Stream */}
+        {/* Right Sidebar Column: Quick Links */}
         <div className="space-y-6">
-          {/* Upcoming Follow-ups */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-amber-400" />
-                Upcoming Follow-ups & Interviews
+                Quick Pipeline Actions
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {sampleUpcomingFollowUps.map((fu) => (
-                <div key={fu.id} className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-100">{fu.company}</span>
-                    <Badge variant="warning" className="text-[10px] py-0">
-                      {fu.type}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-slate-300">{fu.title}</p>
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400 pt-1">
-                    <Clock className="h-3 w-3 text-amber-400" />
-                    <span>{formatDate(fu.date)}</span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Real-time Agent Activity Stream */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bot className="h-4 w-4 text-indigo-400" />
-                AI Agent Live Stream
-              </CardTitle>
-              <CardDescription>Autonomous background agent actions & discovery logs.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {sampleAgentActivity.map((act) => (
-                <div key={act.id} className="flex gap-2.5 items-start text-xs border-b border-slate-800/60 pb-2.5 last:border-0 last:pb-0">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-indigo-300">{act.agent}</span>
-                      <span className="text-[10px] text-slate-500">• {act.timestamp}</span>
-                    </div>
-                    <p className="text-slate-300">{act.action}</p>
-                  </div>
-                </div>
-              ))}
+            <CardContent className="space-y-2">
+              <Button
+                className="w-full justify-start text-xs"
+                variant="outline"
+                onClick={() => navigate('/discover')}
+              >
+                <Plus className="h-3.5 w-3.5 mr-2 text-indigo-400" /> Add Job Listing
+              </Button>
+              <Button
+                className="w-full justify-start text-xs"
+                variant="outline"
+                onClick={() => navigate('/resumes')}
+              >
+                <Plus className="h-3.5 w-3.5 mr-2 text-emerald-400" /> Upload Master Resume
+              </Button>
+              <Button
+                className="w-full justify-start text-xs"
+                variant="outline"
+                onClick={() => navigate('/settings')}
+              >
+                <Plus className="h-3.5 w-3.5 mr-2 text-amber-400" /> Update Candidate Profile
+              </Button>
             </CardContent>
           </Card>
         </div>

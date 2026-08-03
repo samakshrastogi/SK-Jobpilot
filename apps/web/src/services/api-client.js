@@ -13,7 +13,9 @@ export class ApiError extends Error {
 }
 export async function apiFetch(endpoint, options = {}) {
     const { body, timeoutMs = 10000, params, headers, ...customConfig } = options;
-    let url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    let url = endpoint.startsWith('http')
+        ? endpoint
+        : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
     if (params) {
         const searchParams = new URLSearchParams();
         Object.entries(params).forEach(([key, val]) => {

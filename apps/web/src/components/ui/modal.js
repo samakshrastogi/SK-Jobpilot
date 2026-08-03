@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import * as React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/cn';
-export function Modal({ isOpen, onClose, title, description, children, maxWidth = 'md' }) {
+export function Modal({ isOpen, onClose, title, description, children, maxWidth = 'md', }) {
     React.useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape')

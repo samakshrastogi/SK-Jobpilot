@@ -1,5 +1,6 @@
 export const APP_NAME = 'SK JobPilot';
-export const APP_DESCRIPTION = 'AI-powered Job Discovery, Matching, Application & Interview Platform';
+export const APP_DESCRIPTION =
+  'AI-powered Job Discovery, Matching, Application & Interview Platform';
 
 export const API_ROUTES = {
   HEALTH: '/api/v1/health',

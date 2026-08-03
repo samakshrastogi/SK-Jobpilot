@@ -20,7 +20,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full space-y-1.5">
         {label ? (
-          <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <label
+            htmlFor={selectId}
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+          >
             {label}
           </label>
         ) : null}

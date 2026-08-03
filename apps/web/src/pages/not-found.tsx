@@ -10,9 +10,12 @@ export function NotFoundPage() {
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-4">
         <Compass className="h-8 w-8 animate-pulse" />
       </div>
-      <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight">404 - Page Not Found</h1>
+      <h1 className="text-4xl font-extrabold text-slate-100 tracking-tight">
+        404 - Page Not Found
+      </h1>
       <p className="text-sm text-slate-400 max-w-md mt-2 mb-6">
-        The application route you requested does not exist or has been moved in the SK JobPilot navigation tree.
+        The application route you requested does not exist or has been moved in the SK JobPilot
+        navigation tree.
       </p>
       <Button onClick={() => navigate('/')}>
         <Home className="h-4 w-4 mr-2" />

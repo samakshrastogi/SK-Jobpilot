@@ -13,7 +13,8 @@ import { apiRouter } from './routes/index.js';
 
 // Resolve pinoHttp function across ESM/CJS interop
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const pinoHttp = (pinoHttpModule as any).default || (pinoHttpModule as any).pinoHttp || pinoHttpModule;
+const pinoHttp =
+  (pinoHttpModule as any).default || (pinoHttpModule as any).pinoHttp || pinoHttpModule;
 
 export function createApp(): Express {
   const app: Express = express();

@@ -11,7 +11,9 @@ const parseResult = envSchema.safeParse(process.env);
 if (!parseResult.success) {
   // Print formatted validation error and throw
   const formattedErrors = parseResult.error.format();
-  process.stderr.write(`❌ Invalid environment variables:\n${JSON.stringify(formattedErrors, null, 2)}\n`);
+  process.stderr.write(
+    `❌ Invalid environment variables:\n${JSON.stringify(formattedErrors, null, 2)}\n`
+  );
   throw new Error('Invalid environment configuration');
 }
 

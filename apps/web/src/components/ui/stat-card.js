@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Card } from './card';
-export function StatCard({ title, value, icon, trend, trendType = 'positive', subtitle }) {
+export function StatCard({ title, value, icon, trend, trendType = 'positive', subtitle, }) {
     const trendColorClass = trendType === 'positive'
         ? 'text-emerald-400'
         : trendType === 'negative'

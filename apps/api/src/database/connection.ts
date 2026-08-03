@@ -20,7 +20,10 @@ export async function connectDatabase(): Promise<boolean> {
     return true;
   } catch (error) {
     isConnected = false;
-    logger.warn({ error }, '⚠️ Database connection failed. Operating in degraded/disconnected mode.');
+    logger.warn(
+      { error },
+      '⚠️ Database connection failed. Operating in degraded/disconnected mode.'
+    );
     return false;
   }
 }

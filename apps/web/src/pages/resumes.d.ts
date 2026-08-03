@@ -1,2 +1,3 @@
-export declare function ResumesPage(): import("react").JSX.Element;
+import * as React from 'react';
+export declare function ResumesPage(): React.JSX.Element;
 //# sourceMappingURL=resumes.d.ts.map

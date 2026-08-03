@@ -14,7 +14,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full space-y-1.5">
         {label ? (
-          <label htmlFor={textareaId} className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <label
+            htmlFor={textareaId}
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+          >
             {label}
           </label>
         ) : null}

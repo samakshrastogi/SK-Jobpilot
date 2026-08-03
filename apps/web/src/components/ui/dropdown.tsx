@@ -49,7 +49,9 @@ export function Dropdown({ trigger, items, align = 'right' }: DropdownProps) {
               }}
               className={cn(
                 'flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors hover:bg-slate-800',
-                item.danger ? 'text-rose-400 hover:text-rose-300' : 'text-slate-300 hover:text-slate-100'
+                item.danger
+                  ? 'text-rose-400 hover:text-rose-300'
+                  : 'text-slate-300 hover:text-slate-100'
               )}
             >
               {item.icon ? <span className="h-4 w-4">{item.icon}</span> : null}

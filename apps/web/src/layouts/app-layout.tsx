@@ -46,7 +46,9 @@ export function AppLayout() {
   const { data: healthData, isError: isHealthError } = useHealthQuery();
 
   const currentNav = navItems.find(
-    (item) => item.path === location.pathname || (item.path !== '/' && location.pathname.startsWith(item.path))
+    (item) =>
+      item.path === location.pathname ||
+      (item.path !== '/' && location.pathname.startsWith(item.path))
   );
 
   return (
@@ -67,7 +69,9 @@ export function AppLayout() {
             {!isSidebarCollapsed ? (
               <div className="flex flex-col truncate">
                 <span className="text-sm font-bold tracking-tight text-white">SK JobPilot</span>
-                <span className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">AI Copilot</span>
+                <span className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">
+                  AI Copilot
+                </span>
               </div>
             ) : null}
           </div>
@@ -76,7 +80,11 @@ export function AppLayout() {
             className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {isSidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </button>
         </div>
 
@@ -110,9 +118,16 @@ export function AppLayout() {
           {!isSidebarCollapsed ? (
             <div className="rounded-lg border border-slate-800 p-2.5 bg-slate-900/60 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Radio className={cn('h-3.5 w-3.5 animate-pulse', !isHealthError ? 'text-emerald-400' : 'text-rose-400')} />
+                <Radio
+                  className={cn(
+                    'h-3.5 w-3.5 animate-pulse',
+                    !isHealthError ? 'text-emerald-400' : 'text-rose-400'
+                  )}
+                />
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Backend API</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">
+                    Backend API
+                  </span>
                   <span className="text-xs font-medium text-slate-200">
                     {!isHealthError && healthData ? 'Connected' : 'Offline / Mock'}
                   </span>
@@ -124,14 +139,24 @@ export function AppLayout() {
             </div>
           ) : (
             <div className="flex justify-center" title="API Status">
-              <Radio className={cn('h-4 w-4 animate-pulse', !isHealthError ? 'text-emerald-400' : 'text-rose-400')} />
+              <Radio
+                className={cn(
+                  'h-4 w-4 animate-pulse',
+                  !isHealthError ? 'text-emerald-400' : 'text-rose-400'
+                )}
+              />
             </div>
           )}
         </div>
       </aside>
 
       {/* Mobile Drawer Navigation */}
-      <Drawer isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} side="left" title="SK JobPilot Menu">
+      <Drawer
+        isOpen={isMobileOpen}
+        onClose={() => setIsMobileOpen(false)}
+        side="left"
+        title="SK JobPilot Menu"
+      >
         <nav className="space-y-1.5 pt-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -169,8 +194,13 @@ export function AppLayout() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-100">{currentNav?.label || 'SK JobPilot'}</h2>
-              <Badge variant="warning" className="hidden sm:inline-flex bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] uppercase font-bold tracking-wider">
+              <h2 className="text-base font-bold text-slate-100">
+                {currentNav?.label || 'SK JobPilot'}
+              </h2>
+              <Badge
+                variant="warning"
+                className="hidden sm:inline-flex bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] uppercase font-bold tracking-wider"
+              >
                 DEV SAMPLE DATA
               </Badge>
             </div>
@@ -208,7 +238,12 @@ export function AppLayout() {
       </div>
 
       {/* Global Search Modal */}
-      <Modal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} title="Global Search" maxWidth="lg">
+      <Modal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        title="Global Search"
+        maxWidth="lg"
+      >
         <div className="space-y-4">
           <Input
             placeholder="Type a title, skill, or company..."
@@ -219,7 +254,9 @@ export function AppLayout() {
           />
           <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-center">
             <p className="text-xs text-slate-400">
-              {searchQuery ? `Showing preview matches for "${searchQuery}"` : 'Enter keywords to search across jobs and applications.'}
+              {searchQuery
+                ? `Showing preview matches for "${searchQuery}"`
+                : 'Enter keywords to search across jobs and applications.'}
             </p>
             <div className="mt-3 flex justify-center gap-2">
               <Badge variant="outline">React</Badge>
@@ -242,14 +279,18 @@ export function AppLayout() {
             <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold mb-1">
               <Bot className="h-4 w-4" /> Discovery Agent
             </div>
-            <p className="text-xs text-slate-300">5 new High-Match Senior TypeScript jobs discovered.</p>
+            <p className="text-xs text-slate-300">
+              5 new High-Match Senior TypeScript jobs discovered.
+            </p>
             <span className="text-[10px] text-slate-400 mt-2 block">10 minutes ago</span>
           </div>
           <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
             <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1">
               <CheckCircle2 className="h-4 w-4" /> Tailor Agent
             </div>
-            <p className="text-xs text-slate-300">Resume tailored for "Lead AI Architect" at TechCorp.</p>
+            <p className="text-xs text-slate-300">
+              Resume tailored for "Lead AI Architect" at TechCorp.
+            </p>
             <span className="text-[10px] text-slate-400 mt-2 block">1 hour ago</span>
           </div>
         </div>

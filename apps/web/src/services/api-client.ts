@@ -7,7 +7,12 @@ export class ApiError extends Error {
   public readonly code: string;
   public readonly details?: unknown;
 
-  constructor(message: string, statusCode: number = 500, code: string = 'UNKNOWN_ERROR', details?: unknown) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code: string = 'UNKNOWN_ERROR',
+    details?: unknown
+  ) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
@@ -23,10 +28,15 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
-export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+export async function apiFetch<T>(
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<ApiResponse<T>> {
   const { body, timeoutMs = 10000, params, headers, ...customConfig } = options;
 
-  let url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  let url = endpoint.startsWith('http')
+    ? endpoint
+    : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
   if (params) {
     const searchParams = new URLSearchParams();

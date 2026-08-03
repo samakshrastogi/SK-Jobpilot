@@ -43,7 +43,9 @@ export function SavedJobsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-100">{job.title}</h3>
-                <p className="text-xs text-slate-400">{job.company} • {job.location}</p>
+                <p className="text-xs text-slate-400">
+                  {job.company} • {job.location}
+                </p>
               </div>
               <Badge variant="success">{job.matchScore}% Match</Badge>
             </div>
