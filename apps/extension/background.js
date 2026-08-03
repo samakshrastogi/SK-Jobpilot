@@ -1,12 +1,17 @@
-// SK JobPilot - Background Service Worker
-console.log('SK JobPilot Service Worker initialized.');
+const API_BASE_URL = 'http://localhost:5000/api/v1';
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'FETCH_CANDIDATE_PROFILE') {
-    fetch('http://localhost:5000/api/v1/profile')
-      .then((res) => res.json())
-      .then((data) => sendResponse({ success: true, data: data.data }))
-      .catch((err) => sendResponse({ success: false, error: err.message }));
-    return true;
-  }
+async function fetchApi(path) {
+  const response = await fetch(API_BASE_URL + path, { headers: { Accept: 'application/json' } });
+  const payload = await response.json();
+  if (!response.ok || !payload.success) throw new Error(payload.message || 'JobPilot API request failed');
+  return payload.data;
+}
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.action !== 'FETCH_ASSISTANT_CONTEXT') return false;
+
+  Promise.all([fetchApi('/profile'), fetchApi('/screening/answers')])
+    .then(([profile, savedAnswers]) => sendResponse({ success: true, profile, savedAnswers }))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
+  return true;
 });
