@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Compass,
+  Layers,
   BookmarkCheck,
   Briefcase,
   FileText,
@@ -27,6 +28,7 @@ import { useHealthQuery } from '../hooks/use-health';
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Discover Jobs', path: '/discover', icon: Compass },
+  { label: 'Discovery Sources', path: '/discovery-sources', icon: Layers },
   { label: 'Saved Jobs', path: '/saved-jobs', icon: BookmarkCheck },
   { label: 'Applications', path: '/applications', icon: Briefcase },
   { label: 'Resumes', path: '/resumes', icon: FileText },
@@ -197,12 +199,6 @@ export function AppLayout() {
               <h2 className="text-base font-bold text-slate-100">
                 {currentNav?.label || 'SK JobPilot'}
               </h2>
-              <Badge
-                variant="warning"
-                className="hidden sm:inline-flex bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] uppercase font-bold tracking-wider"
-              >
-                DEV SAMPLE DATA
-              </Badge>
             </div>
           </div>
 
@@ -280,18 +276,9 @@ export function AppLayout() {
               <Bot className="h-4 w-4" /> Discovery Agent
             </div>
             <p className="text-xs text-slate-300">
-              5 new High-Match Senior TypeScript jobs discovered.
+              New High-Match Senior TypeScript jobs discovered.
             </p>
             <span className="text-[10px] text-slate-400 mt-2 block">10 minutes ago</span>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1">
-              <CheckCircle2 className="h-4 w-4" /> Tailor Agent
-            </div>
-            <p className="text-xs text-slate-300">
-              Resume tailored for "Lead AI Architect" at TechCorp.
-            </p>
-            <span className="text-[10px] text-slate-400 mt-2 block">1 hour ago</span>
           </div>
         </div>
       </Drawer>

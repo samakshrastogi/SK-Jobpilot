@@ -7,6 +7,8 @@ import {
   Building2,
   Calendar,
   Plus,
+  Cpu,
+  ArrowRight,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/page-header';
 import { StatCard } from '../components/ui/stat-card';
@@ -15,6 +17,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useJobsQuery } from '../hooks/use-jobs';
 import { useApplicationsQuery } from '../hooks/use-applications';
+import { useAIHealthQuery, useTailoredResumesQuery } from '../hooks/use-ai';
 import { formatDate, getMatchScoreColor } from '@sk-job-pilot/shared';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,21 +25,28 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { data: jobsResponse } = useJobsQuery({ limit: 5 });
   const { data: applicationsResponse } = useApplicationsQuery({ limit: 5 });
+  const { data: aiHealthResponse } = useAIHealthQuery();
+  const { data: tailoredResumesResponse } = useTailoredResumesQuery();
 
   const jobs = jobsResponse?.data || [];
   const totalJobs = jobsResponse?.pagination?.totalItems || 0;
   const applications = applicationsResponse?.data || [];
   const totalApplications = applicationsResponse?.pagination?.totalItems || 0;
+  const tailoredResumes = tailoredResumesResponse?.data || [];
+  const aiHealth = aiHealthResponse?.data;
 
   const savedJobsCount = jobs.filter((j) => j.savedStatus).length;
   const interviewingAppsCount = applications.filter((a) => a.status === 'interview').length;
+  const pendingTailoredCount = tailoredResumes.filter(
+    (r) => r.approvalStatus === 'generated' || r.approvalStatus === 'under_review'
+  ).length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="Command Center Dashboard"
-        description="Real-time pipeline metrics, job recommendations, and ongoing application lifecycle tracking."
+        description="Real-time pipeline metrics, AI health monitor, and application lifecycle tracking."
         actions={
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={() => navigate('/discover')}>
@@ -82,12 +92,12 @@ export function DashboardPage() {
           subtitle="Interview stage"
         />
         <StatCard
-          title="Avg Match Score"
-          value="88%"
-          icon={<Target className="h-5 w-5" />}
-          trend="High Alignment"
-          trendType="positive"
-          subtitle="Based on master profile"
+          title="Pending Tailored Resumes"
+          value={pendingTailoredCount}
+          icon={<Target className="h-5 w-5 text-indigo-400" />}
+          trend="Requires Review"
+          trendType={pendingTailoredCount > 0 ? 'positive' : 'neutral'}
+          subtitle="Awaiting human approval"
         />
       </div>
 
@@ -209,8 +219,45 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Right Sidebar Column: Quick Links */}
+        {/* Right Sidebar Column: AI Provider Health & Quick Actions */}
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-indigo-400" />
+                AI Intelligence Provider Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">Engine Status:</span>
+                <Badge variant={aiHealth?.status === 'healthy' ? 'success' : 'warning'}>
+                  {aiHealth?.status || 'degraded'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">Text Generation Model:</span>
+                <span className="font-mono text-indigo-300 text-[11px]">
+                  {aiHealth?.textModel || 'gemini-2.5-flash'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">Daily Requests Used:</span>
+                <span className="font-semibold text-slate-200">
+                  {aiHealth?.dailyRequestsUsed || 0} / {aiHealth?.dailyRequestLimit || 200}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full justify-between mt-2"
+                onClick={() => navigate('/agent-activity')}
+              >
+                <span>View AI Execution Logs</span> <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -231,7 +278,7 @@ export function DashboardPage() {
                 variant="outline"
                 onClick={() => navigate('/resumes')}
               >
-                <Plus className="h-3.5 w-3.5 mr-2 text-emerald-400" /> Upload Master Resume
+                <Plus className="h-3.5 w-3.5 mr-2 text-emerald-400" /> Review Tailored Resumes
               </Button>
               <Button
                 className="w-full justify-start text-xs"

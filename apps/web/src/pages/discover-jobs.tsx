@@ -9,6 +9,10 @@ import {
   Bookmark,
   Archive,
   Trash2,
+  Sparkles,
+  Zap,
+  CheckCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/page-header';
 import { Input } from '../components/ui/input';
@@ -28,7 +32,12 @@ import {
   useToggleArchiveJobMutation,
   useDeleteJobMutation,
 } from '../hooks/use-jobs';
-import type { Job } from '@sk-job-pilot/shared';
+import {
+  useRunJobMatchMutation,
+  useBatchMatchMutation,
+  useGenerateTailoredResumeMutation,
+} from '../hooks/use-ai';
+import type { Job, JobMatch } from '@sk-job-pilot/shared';
 import { formatDate, getMatchScoreColor } from '@sk-job-pilot/shared';
 import { toast } from 'sonner';
 
@@ -38,8 +47,8 @@ export function DiscoverJobsPage() {
   const [workMode, setWorkMode] = React.useState('');
   const [employmentType, setEmploymentType] = React.useState('');
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [selectedMatch, setSelectedMatch] = React.useState<JobMatch | null>(null);
 
-  // Job query with filters
   const {
     data: jobsResponse,
     isLoading,
@@ -57,8 +66,10 @@ export function DiscoverJobsPage() {
   const toggleSaveMutation = useToggleSaveJobMutation();
   const toggleArchiveMutation = useToggleArchiveJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
+  const runMatchMutation = useRunJobMatchMutation();
+  const batchMatchMutation = useBatchMatchMutation();
+  const generateTailoredMutation = useGenerateTailoredResumeMutation();
 
-  // Manual job modal form state
   const [newJob, setNewJob] = React.useState<Partial<Job>>({
     companyName: '',
     jobTitle: '',
@@ -104,26 +115,41 @@ export function DiscoverJobsPage() {
     });
   };
 
-  const handleToggleSave = (id: string) => {
-    toggleSaveMutation.mutate(id, {
+  const handleCalculateMatch = (jobId: string) => {
+    runMatchMutation.mutate(
+      { jobId, force: true },
+      {
+        onSuccess: (res) => {
+          if (res.data) {
+            setSelectedMatch(res.data);
+            toast.success(`Calculated AI Match Score: ${res.data.overallScore}%`);
+          }
+        },
+        onError: (err: unknown) => {
+          toast.error(err instanceof Error ? err.message : 'AI Match scoring failed');
+        },
+      }
+    );
+  };
+
+  const handleBatchMatch = () => {
+    const jobIds = jobs.map((j) => j.id);
+    if (jobIds.length === 0) return;
+
+    batchMatchMutation.mutate(jobIds, {
       onSuccess: (res) => {
-        toast.success(res.message || 'Updated saved status');
+        toast.success(`Batch matched ${res.data?.length || 0} jobs successfully!`);
       },
     });
   };
 
-  const handleToggleArchive = (id: string) => {
-    toggleArchiveMutation.mutate(id, {
-      onSuccess: (res) => {
-        toast.success(res.message || 'Updated archive status');
-      },
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    deleteJobMutation.mutate(id, {
+  const handleGenerateTailored = (jobId: string) => {
+    generateTailoredMutation.mutate(jobId, {
       onSuccess: () => {
-        toast.success('Job removed cleanly');
+        toast.success('Tailored resume version proposed! View under Resumes workspace.');
+      },
+      onError: (err: unknown) => {
+        toast.error(err instanceof Error ? err.message : 'Failed to generate tailored resume');
       },
     });
   };
@@ -132,12 +158,22 @@ export function DiscoverJobsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Discover Jobs"
-        description="Persistent database job listings, search filters, and manual entry pipeline."
+        description="Persistent database job listings, AI hybrid matching engine, and batch analysis."
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Discover Jobs' }]}
         actions={
-          <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Add Job Manually
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBatchMatch}
+              isLoading={batchMatchMutation.isPending}
+            >
+              <Zap className="h-4 w-4 mr-1.5 text-indigo-400" /> Batch Match Jobs
+            </Button>
+            <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-1.5" /> Add Job Manually
+            </Button>
+          </div>
         }
       />
 
@@ -190,7 +226,9 @@ export function DiscoverJobsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-slate-100">{job.jobTitle}</h3>
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${scoreStyle.bg} ${scoreStyle.text}`}
+                        className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold cursor-pointer ${scoreStyle.bg} ${scoreStyle.text}`}
+                        onClick={() => handleCalculateMatch(job.id)}
+                        title="Click to recalculate AI Match"
                       >
                         {job.matchScore || 0}% Match
                       </span>
@@ -218,11 +256,31 @@ export function DiscoverJobsPage() {
                     </div>
                     <p className="text-xs text-slate-300 line-clamp-2 pt-1">{job.description}</p>
                   </div>
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+
+                  {/* Job Action Buttons */}
+                  <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCalculateMatch(job.id)}
+                      isLoading={
+                        runMatchMutation.isPending && runMatchMutation.variables?.jobId === job.id
+                      }
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1 text-indigo-400" /> Match AI
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateTailored(job.id)}
+                      isLoading={generateTailoredMutation.isPending}
+                    >
+                      Tailor Resume
+                    </Button>
                     <Button
                       size="sm"
                       variant={job.savedStatus ? 'primary' : 'outline'}
-                      onClick={() => handleToggleSave(job.id)}
+                      onClick={() => toggleSaveMutation.mutate(job.id)}
                     >
                       <Bookmark className="h-3.5 w-3.5 mr-1" />
                       {job.savedStatus ? 'Saved' : 'Save'}
@@ -230,7 +288,7 @@ export function DiscoverJobsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleToggleArchive(job.id)}
+                      onClick={() => toggleArchiveMutation.mutate(job.id)}
                       title={job.archivedStatus ? 'Unarchive' : 'Archive'}
                     >
                       <Archive className="h-4 w-4 text-slate-400" />
@@ -248,7 +306,7 @@ export function DiscoverJobsPage() {
                       size="icon"
                       variant="ghost"
                       className="text-rose-400 hover:text-rose-300"
-                      onClick={() => handleDelete(job.id)}
+                      onClick={() => deleteJobMutation.mutate(job.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -293,6 +351,60 @@ export function DiscoverJobsPage() {
             </Button>
           </div>
         </div>
+      ) : null}
+
+      {/* Match Breakdown Modal */}
+      {selectedMatch ? (
+        <Modal
+          isOpen={Boolean(selectedMatch)}
+          onClose={() => setSelectedMatch(null)}
+          title={`AI Match Evaluation breakdown: ${selectedMatch.overallScore}%`}
+          maxWidth="lg"
+        >
+          <div className="space-y-4 text-xs">
+            <div className="p-3 rounded bg-slate-950 border border-slate-800 space-y-1">
+              <span className="font-bold text-slate-200">Match Recommendation:</span>
+              <Badge variant="success" className="ml-2 capitalize">
+                {selectedMatch.recommendation.replace('_', ' ')}
+              </Badge>
+              <p className="text-slate-300 pt-1 leading-relaxed">{selectedMatch.explanation}</p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-bold text-indigo-400 uppercase tracking-wider text-[11px]">
+                Matched Required Skills
+              </h4>
+              <div className="flex flex-wrap gap-1">
+                {(selectedMatch.matchedRequiredSkills || []).map((s, i) => (
+                  <Badge key={i} variant="success" className="text-[10px]">
+                    <CheckCircle className="h-3 w-3 mr-1" /> {s}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {selectedMatch.missingRequiredSkills?.length ? (
+              <div className="space-y-2">
+                <h4 className="font-bold text-rose-400 uppercase tracking-wider text-[11px]">
+                  Missing Requirements
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {selectedMatch.missingRequiredSkills.map((s, i) => (
+                    <Badge key={i} variant="danger" className="text-[10px]">
+                      <AlertTriangle className="h-3 w-3 mr-1" /> {s}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex justify-end pt-2">
+              <Button size="sm" onClick={() => setSelectedMatch(null)}>
+                Close Breakdown
+              </Button>
+            </div>
+          </div>
+        </Modal>
       ) : null}
 
       {/* Manual Add Job Modal */}

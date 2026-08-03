@@ -10,6 +10,8 @@ import {
   SlidersHorizontal,
   Plus,
   Trash2,
+  Cpu,
+  ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/page-header';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
@@ -22,12 +24,14 @@ import { LoadingState } from '../components/ui/loading-state';
 import { ErrorState } from '../components/ui/error-state';
 import { useProfileQuery, useSaveProfileMutation } from '../hooks/use-profile';
 import { useDatabaseHealthQuery } from '../hooks/use-health';
+import { useAIHealthQuery } from '../hooks/use-ai';
 import type { CandidateProfile } from '@sk-job-pilot/shared';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
   const { data: profileResponse, isLoading, isError, refetch } = useProfileQuery();
   const { data: dbData } = useDatabaseHealthQuery();
+  const { data: aiHealthResponse } = useAIHealthQuery();
   const saveMutation = useSaveProfileMutation();
 
   const [activeTab, setActiveTab] = React.useState<
@@ -39,6 +43,7 @@ export function SettingsPage() {
     | 'projects'
     | 'certificates'
     | 'preferences'
+    | 'ai'
   >('personal');
 
   const [formData, setFormData] = React.useState<Partial<CandidateProfile>>({});
@@ -63,7 +68,6 @@ export function SettingsPage() {
     });
   };
 
-  // Helper updaters
   const updatePersonalInfo = (field: string, val: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -89,11 +93,13 @@ export function SettingsPage() {
     }));
   };
 
+  const aiHealth = aiHealthResponse?.data;
+
   return (
     <div className="space-y-6 pb-12">
       <PageHeader
-        title="Candidate Profile & Settings"
-        description="Single-owner master profile used by AI matching and resume tailoring algorithms."
+        title="Candidate Profile & AI Settings"
+        description="Single-owner master candidate profile & AI engine configurations."
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Profile & Settings' }]}
         actions={
           <Button size="sm" onClick={handleSave} isLoading={saveMutation.isPending}>
@@ -114,6 +120,7 @@ export function SettingsPage() {
           { id: 'projects', label: 'Projects', icon: FolderGit2 },
           { id: 'certificates', label: 'Certificates', icon: Award },
           { id: 'preferences', label: 'Job Preferences', icon: SlidersHorizontal },
+          { id: 'ai', label: 'AI Intelligence Settings', icon: Cpu },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -392,13 +399,89 @@ export function SettingsPage() {
         </Card>
       )}
 
+      {/* Tab: AI Intelligence Settings */}
+      {activeTab === 'ai' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-indigo-400" /> Server AI Provider Health & Safeguards
+            </CardTitle>
+            <CardDescription>
+              Configured AI engine provider status, model selection, rate limits, and daily token
+              budgets.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Status Summary Banner */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-lg border border-slate-800 bg-slate-950">
+              <div>
+                <span className="text-xs text-slate-400 block">Active Provider</span>
+                <span className="text-sm font-bold text-indigo-400 capitalize mt-0.5 block">
+                  {aiHealth?.configuredProvider || 'gemini'}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-400 block">Server API Key</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-semibold text-emerald-400">
+                    Configured (Server Memory Only)
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-slate-400 block">Circuit Breaker State</span>
+                <Badge
+                  variant={aiHealth?.circuitState === 'closed' ? 'success' : 'danger'}
+                  className="mt-0.5 capitalize"
+                >
+                  {aiHealth?.circuitState || 'closed'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Model & Budget Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Active Text Generation Model"
+                value={aiHealth?.textModel || 'gemini-2.5-flash'}
+                disabled
+              />
+              <Input
+                label="Active Vector Embedding Model"
+                value={aiHealth?.embeddingModel || 'text-embedding-004'}
+                disabled
+              />
+              <Input
+                label="Daily Request Usage"
+                value={`${aiHealth?.dailyRequestsUsed || 0} / ${aiHealth?.dailyRequestLimit || 200} requests`}
+                disabled
+              />
+              <Input
+                label="Daily Token Budget Usage"
+                value={`${aiHealth?.dailyTokensUsed || 0} / ${aiHealth?.dailyTokenBudget || 500000} tokens`}
+                disabled
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Save Status Footer */}
       <div className="flex justify-between items-center rounded-lg border border-slate-800 bg-slate-900/80 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Database Connection:</span>
-          <Badge variant={dbData?.data?.database === 'connected' ? 'success' : 'danger'}>
-            {dbData?.data?.database || 'disconnected'}
-          </Badge>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">Database:</span>
+            <Badge variant={dbData?.data?.database === 'connected' ? 'success' : 'danger'}>
+              {dbData?.data?.database || 'disconnected'}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">AI Service:</span>
+            <Badge variant={aiHealth?.status === 'healthy' ? 'success' : 'warning'}>
+              {aiHealth?.status || 'degraded'}
+            </Badge>
+          </div>
         </div>
         <Button onClick={handleSave} isLoading={saveMutation.isPending}>
           <Save className="h-4 w-4 mr-1.5" />

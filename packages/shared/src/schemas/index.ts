@@ -10,7 +10,20 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   VITE_API_BASE_URL: z.string().url().default('http://localhost:5000/api/v1'),
   GEMINI_API_KEY: z.string().optional().default(''),
-  GEMINI_MODEL: z.string().default('gemini-3.6-flash'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_TEXT_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_EMBEDDING_MODEL: z.string().default('gemini-embedding-2'),
+  AI_PROVIDER: z.enum(['gemini', 'mock']).default('gemini'),
+  AI_REQUEST_TIMEOUT_MS: z.coerce.number().default(30000),
+  AI_MAX_RETRIES: z.coerce.number().default(3),
+  AI_DEFAULT_TEMPERATURE: z.coerce.number().default(0.2),
+  AI_DAILY_REQUEST_LIMIT: z.coerce.number().default(200),
+  AI_DAILY_TOKEN_BUDGET: z.coerce.number().default(500000),
+  ENABLE_EMBEDDINGS: z.coerce.boolean().default(true),
+  ENABLE_AI_FEATURES: z.coerce.boolean().default(true),
+  REDIS_URL: z.string().optional().default('redis://127.0.0.1:6379'),
+  DISCOVERY_MAX_JOBS_PER_RUN: z.coerce.number().default(100),
+  DISCOVERY_HTTP_TIMEOUT_MS: z.coerce.number().default(15000),
   RESUME_STORAGE_DIR: z.string().min(1).default('./uploads/resumes'),
   MAX_RESUME_FILE_SIZE_MB: z.coerce.number().positive().default(10),
 });
@@ -46,14 +59,11 @@ export const professionalInfoSchema = z.object({
   preferredLocations: z.array(z.string()).optional().default([]),
   remotePreference: z.enum(['remote_only', 'hybrid', 'onsite', 'open']).optional().default('open'),
   employmentTypes: z.array(z.string()).optional().default([]),
-  expectedSalary: z
-    .object({
-      amount: z.number().min(0).optional().default(0),
-      currency: z.string().optional().default('USD'),
-      period: z.enum(['yearly', 'monthly', 'hourly']).optional().default('yearly'),
-    })
-    .optional()
-    .default({ amount: 0, currency: 'USD', period: 'yearly' }),
+  expectedSalary: z.object({
+    amount: z.number().min(0).optional().default(0),
+    currency: z.string().optional().default('USD'),
+    period: z.enum(['yearly', 'monthly', 'hourly']).optional().default('yearly'),
+  }).optional().default({ amount: 0, currency: 'USD', period: 'yearly' }),
   noticePeriodDays: z.number().min(0).optional().default(0),
   willingToRelocate: z.boolean().optional().default(false),
 });
@@ -146,21 +156,13 @@ export const createJobSchema = z.object({
   externalSource: z.string().optional().default('manual'),
   externalSourceId: z.string().optional().default(''),
   sourceUrl: z.string().url('Invalid source URL').or(z.string().length(0)).optional().default(''),
-  applicationUrl: z
-    .string()
-    .url('Invalid application URL')
-    .or(z.string().length(0))
-    .optional()
-    .default(''),
+  applicationUrl: z.string().url('Invalid application URL').or(z.string().length(0)).optional().default(''),
   companyName: z.string().min(1, 'Company name is required'),
   companyWebsite: z.string().optional().default(''),
   jobTitle: z.string().min(1, 'Job title is required'),
   location: z.string().optional().default('Remote'),
   workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().default('remote'),
-  employmentType: z
-    .enum(['full_time', 'part_time', 'contract', 'freelance', 'internship'])
-    .optional()
-    .default('full_time'),
+  employmentType: z.enum(['full_time', 'part_time', 'contract', 'freelance', 'internship']).optional().default('full_time'),
   experienceMin: z.number().min(0).optional().default(0),
   experienceMax: z.number().min(0).optional().default(10),
   salaryMin: z.number().min(0).optional().default(0),
@@ -172,13 +174,11 @@ export const createJobSchema = z.object({
   preferredSkills: z.array(z.string()).optional().default([]),
   qualifications: z.array(z.string()).optional().default([]),
   benefits: z.array(z.string()).optional().default([]),
-  postedDate: z
-    .string()
-    .optional()
-    .default(() => new Date().toISOString()),
+  postedDate: z.string().optional().default(() => new Date().toISOString()),
   expiryDate: z.string().optional().default(''),
   savedStatus: z.boolean().optional().default(false),
   archivedStatus: z.boolean().optional().default(false),
+  freshnessStatus: z.enum(['new', 'active', 'updated', 'stale', 'expired', 'removed', 'unknown']).optional().default('active'),
 });
 
 export const updateJobSchema = createJobSchema.partial().extend({
@@ -187,41 +187,38 @@ export const updateJobSchema = createJobSchema.partial().extend({
   processingStatus: z.enum(['discovered', 'analyzed', 'archived']).optional(),
   savedStatus: z.boolean().optional(),
   archivedStatus: z.boolean().optional(),
+  freshnessStatus: z.enum(['new', 'active', 'updated', 'stale', 'expired', 'removed', 'unknown']).optional(),
 });
 
 export const jobFilterQuerySchema = paginationQuerySchema.extend({
   company: z.string().optional(),
   location: z.string().optional(),
   workMode: z.enum(['remote', 'hybrid', 'onsite']).optional(),
-  employmentType: z
-    .enum(['full_time', 'part_time', 'contract', 'freelance', 'internship'])
-    .optional(),
+  employmentType: z.enum(['full_time', 'part_time', 'contract', 'freelance', 'internship']).optional(),
   minMatchScore: z.coerce.number().optional(),
   savedOnly: z.coerce.boolean().optional(),
   archivedOnly: z.coerce.boolean().optional(),
+  freshnessStatus: z.string().optional(),
 });
 
 // Application Schemas
 export const createApplicationSchema = z.object({
   jobId: z.string().min(1, 'Job reference is required'),
   resumeId: z.string().optional(),
-  status: z
-    .enum([
-      'planned',
-      'preparing',
-      'ready_for_review',
-      'submitted',
-      'acknowledged',
-      'recruiter_contacted',
-      'assessment',
-      'interview',
-      'offer',
-      'rejected',
-      'withdrawn',
-      'archived',
-    ])
-    .optional()
-    .default('planned'),
+  status: z.enum([
+    'planned',
+    'preparing',
+    'ready_for_review',
+    'submitted',
+    'acknowledged',
+    'recruiter_contacted',
+    'assessment',
+    'interview',
+    'offer',
+    'rejected',
+    'withdrawn',
+    'archived',
+  ]).optional().default('planned'),
   applicationMethod: z.string().optional().default('Direct Site'),
   applicationUrl: z.string().optional().default(''),
   appliedDate: z.string().optional(),
@@ -240,17 +237,187 @@ export const updateApplicationSchema = createApplicationSchema.partial().extend(
   offerDetails: z.string().optional(),
 });
 
+export const applicationFilterQuerySchema = paginationQuerySchema.extend({
+  status: z.string().optional(),
+  jobId: z.string().optional(),
+});
+
 export const createTimelineEventSchema = z.object({
   status: z.string().min(1, 'Status is required'),
   title: z.string().min(1, 'Event title is required'),
   description: z.string().optional().default(''),
-  date: z
-    .string()
-    .optional()
-    .default(() => new Date().toISOString()),
+  date: z.string().optional().default(() => new Date().toISOString()),
 });
 
-export const applicationFilterQuerySchema = paginationQuerySchema.extend({
-  status: z.string().optional(),
-  jobId: z.string().optional(),
+// Phase 3 & 4 AI & Discovery Schemas
+export const candidateAnalysisSchema = z.object({
+  primaryTitle: z.string(),
+  seniorityEstimate: z.string(),
+  totalRelevantExperienceYears: z.number(),
+  coreSkills: z.array(z.string()),
+  supportingSkills: z.array(z.string()),
+  toolsAndPlatforms: z.array(z.string()),
+  domainExperience: z.array(z.string()),
+  industryExperience: z.array(z.string()),
+  leadershipIndicators: z.array(z.string()),
+  backendStrengths: z.array(z.string()),
+  frontendStrengths: z.array(z.string()),
+  cloudDevOpsStrengths: z.array(z.string()),
+  aiAutomationStrengths: z.array(z.string()),
+  strongestAchievements: z.array(z.string()),
+  measurableEvidence: z.array(z.string()),
+  preferredRoles: z.array(z.string()),
+  roleSuitability: z.array(z.string()),
+  missingOrWeakInfo: z.array(z.string()),
+  parsingWarnings: z.array(z.string()),
+  evidenceReferences: z.array(z.object({ claim: z.string(), source: z.string() })).optional().default([]),
+});
+
+export const jobAnalysisSchema = z.object({
+  normalizedTitle: z.string(),
+  company: z.string(),
+  seniority: z.string(),
+  roleFamily: z.string(),
+  requiredExperienceYears: z.number(),
+  requiredSkills: z.array(z.string()),
+  preferredSkills: z.array(z.string()),
+  responsibilities: z.array(z.string()),
+  qualifications: z.array(z.string()),
+  educationRequirements: z.array(z.string()),
+  domainRequirements: z.array(z.string()),
+  location: z.string(),
+  workMode: z.string(),
+  employmentType: z.string(),
+  visaSponsorship: z.string(),
+  compensationText: z.string(),
+  importantKeywords: z.array(z.string()),
+  negativeRequirements: z.array(z.string()),
+  confidenceScore: z.number(),
+  extractionWarnings: z.array(z.string()),
+});
+
+export const matchCategoryScoreSchema = z.object({
+  score: z.number().min(0).max(100),
+  weight: z.number(),
+  weightedScore: z.number(),
+  notes: z.string(),
+});
+
+export const jobMatchSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  recommendation: z.enum([
+    'excellent_match',
+    'strong_match',
+    'possible_match',
+    'weak_match',
+    'not_recommended',
+    'manual_review_required',
+  ]),
+  categories: z.object({
+    requiredSkills: matchCategoryScoreSchema,
+    experience: matchCategoryScoreSchema,
+    roleTitleAlignment: matchCategoryScoreSchema,
+    preferredSkills: matchCategoryScoreSchema,
+    domainAlignment: matchCategoryScoreSchema,
+    projectEvidence: matchCategoryScoreSchema,
+    educationAlignment: matchCategoryScoreSchema,
+    locationWorkPref: matchCategoryScoreSchema,
+  }),
+  matchedRequiredSkills: z.array(z.string()),
+  missingRequiredSkills: z.array(z.string()),
+  matchedPreferredSkills: z.array(z.string()),
+  missingPreferredSkills: z.array(z.string()),
+  transferableSkills: z.array(z.string()),
+  strongSupportingExperience: z.array(z.string()),
+  weakEvidenceAreas: z.array(z.string()),
+  potentialDisqualifiers: z.array(z.string()),
+  explanation: z.string(),
+  evidenceReferences: z.array(z.object({ claim: z.string(), source: z.string() })).optional().default([]),
+});
+
+export const skillGapAnalysisSchema = z.object({
+  criticalMissingRequirements: z.array(z.string()),
+  importantMissingSkills: z.array(z.string()),
+  optionalMissingSkills: z.array(z.string()),
+  weaklyEvidencedSkills: z.array(z.string()),
+  transferableSkills: z.array(z.string()),
+  resumeVisibilityGaps: z.array(z.string()),
+  genuineExperienceGaps: z.array(z.string()),
+  recommendedResumeImprovements: z.array(z.string()),
+  recommendedPortfolioImprovements: z.array(z.string()),
+  recommendedInterviewPrepTopics: z.array(z.string()),
+});
+
+export const tailoredResumeChangeSchema = z.object({
+  id: z.string(),
+  section: z.string(),
+  transformationType: z.enum(['unchanged', 'reordered', 'shortened', 'clarified', 'keyword_aligned', 'impact_emphasized']),
+  originalText: z.string(),
+  proposedText: z.string(),
+  reason: z.string(),
+  targetedKeywords: z.array(z.string()),
+  truthfulnessConfidence: z.number().min(0).max(100),
+  sourceReference: z.string(),
+  approvalStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+});
+
+export const tailoredResumeSchema = z.object({
+  name: z.string(),
+  jobId: z.string(),
+  proposedSummary: z.string(),
+  proposedSkills: z.array(z.string()),
+  proposedExperienceBullets: z.array(tailoredResumeChangeSchema),
+  coverLetterOutline: z.string().optional().default(''),
+  estimatedScoreBefore: z.number().min(0).max(100),
+  estimatedScoreAfter: z.number().min(0).max(100),
+  approvalStatus: z.enum(['draft', 'generated', 'under_review', 'approved', 'rejected', 'archived']).default('generated'),
+});
+
+export const batchMatchRequestSchema = z.object({
+  jobIds: z.array(z.string()).min(1).max(20),
+});
+
+// Phase 4 Discovery Schemas
+export const createDiscoverySourceSchema = z.object({
+  name: z.string().min(1, 'Source name is required'),
+  providerType: z.enum(['greenhouse', 'lever', 'ashby', 'workable', 'generic_html', 'generic_browser', 'rss', 'manual', 'import']),
+  companyName: z.string().min(1, 'Company name is required'),
+  baseUrl: z.string().optional().default(''),
+  careersUrl: z.string().min(1, 'Careers URL or Board ID is required'),
+  boardId: z.string().optional().default(''),
+  includedKeywords: z.array(z.string()).optional().default([]),
+  excludedKeywords: z.array(z.string()).optional().default([]),
+  enabled: z.boolean().optional().default(true),
+  scheduleEnabled: z.boolean().optional().default(true),
+  scheduleExpression: z.string().optional().default('0 */6 * * *'),
+});
+
+export const updateDiscoverySourceSchema = createDiscoverySourceSchema.partial();
+
+// Phase 4 Interview Preparation & Mock Schemas
+export const createInterviewPrepSchema = z.object({
+  jobId: z.string().min(1, 'Job reference is required'),
+  interviewType: z.enum(['recruiter_screen', 'behavioural', 'technical', 'coding', 'system_design', 'project_deep_dive', 'managerial', 'mixed']).optional().default('behavioural'),
+  difficulty: z.enum(['junior', 'mid', 'senior', 'lead', 'executive']).optional().default('senior'),
+});
+
+export const submitMockAnswerSchema = z.object({
+  questionId: z.string().min(1, 'Question ID is required'),
+  candidateAnswer: z.string().min(1, 'Answer is required'),
+});
+
+// Phase 4 Saved Answer & Reminder Schemas
+export const createSavedAnswerSchema = z.object({
+  canonicalKey: z.string().min(1, 'Canonical key is required'),
+  category: z.string().optional().default('general'),
+  answerText: z.string().min(1, 'Answer text is required'),
+  requiresConfirmation: z.boolean().optional().default(false),
+});
+
+export const createFollowUpReminderSchema = z.object({
+  applicationId: z.string().min(1, 'Application ID is required'),
+  reminderType: z.enum(['application_follow_up', 'recruiter_reply', 'assessment_deadline', 'interview_preparation', 'interview_follow_up', 'offer_decision', 'manual']),
+  title: z.string().min(1, 'Title is required'),
+  dueDate: z.string().min(1, 'Due date is required'),
+  notes: z.string().optional().default(''),
 });

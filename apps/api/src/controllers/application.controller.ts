@@ -59,11 +59,18 @@ export async function createApplication(req: Request, res: Response): Promise<vo
 
   const application = await ApplicationModel.create({
     job: new mongoose.Types.ObjectId(validated.jobId),
-    resume: resumeId && mongoose.Types.ObjectId.isValid(resumeId) ? new mongoose.Types.ObjectId(resumeId) : undefined,
+    resume:
+      resumeId && mongoose.Types.ObjectId.isValid(resumeId)
+        ? new mongoose.Types.ObjectId(resumeId)
+        : undefined,
     status: validated.status,
     applicationMethod: validated.applicationMethod,
     applicationUrl: validated.applicationUrl || job.applicationUrl || job.sourceUrl || '',
-    appliedDate: validated.appliedDate ? new Date(validated.appliedDate) : validated.status === 'submitted' ? new Date() : undefined,
+    appliedDate: validated.appliedDate
+      ? new Date(validated.appliedDate)
+      : validated.status === 'submitted'
+        ? new Date()
+        : undefined,
     lastActivityDate: new Date(),
     nextFollowUpDate: validated.nextFollowUpDate ? new Date(validated.nextFollowUpDate) : undefined,
     contactPerson: validated.contactPerson,
@@ -75,7 +82,9 @@ export async function createApplication(req: Request, res: Response): Promise<vo
     timelineEvents: [initialEvent],
   });
 
-  const populated = await ApplicationModel.findById(application._id).populate('job').populate('resume');
+  const populated = await ApplicationModel.findById(application._id)
+    .populate('job')
+    .populate('resume');
 
   sendSuccess(res, populated, 'Application created successfully', 201, req);
 }
@@ -166,7 +175,9 @@ export async function updateApplication(req: Request, res: Response): Promise<vo
   }
 
   await application.save();
-  const populated = await ApplicationModel.findById(application._id).populate('job').populate('resume');
+  const populated = await ApplicationModel.findById(application._id)
+    .populate('job')
+    .populate('resume');
 
   sendSuccess(res, populated, 'Application updated successfully', 200, req);
 }
@@ -206,6 +217,8 @@ export async function addTimelineEvent(req: Request, res: Response): Promise<voi
   application.lastActivityDate = new Date();
   await application.save();
 
-  const populated = await ApplicationModel.findById(application._id).populate('job').populate('resume');
+  const populated = await ApplicationModel.findById(application._id)
+    .populate('job')
+    .populate('resume');
   sendSuccess(res, populated, 'Timeline event added successfully', 200, req);
 }

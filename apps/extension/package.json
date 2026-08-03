@@ -1,0 +1,9 @@
+{
+  "name": "@sk-job-pilot/extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SK JobPilot Manifest V3 Browser Extension Workspace",
+  "scripts": {
+    "build": "echo 'Browser extension ready in apps/extension/'"
+  }
+}

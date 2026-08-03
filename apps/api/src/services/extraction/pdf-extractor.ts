@@ -16,7 +16,9 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<ExtractionResu
     const pageCount = data.numpages || 1;
 
     if (trimmed.length < 30) {
-      warnings.push('PDF yields fewer than 30 characters of text. Document appears to be a scanned image.');
+      warnings.push(
+        'PDF yields fewer than 30 characters of text. Document appears to be a scanned image.'
+      );
       return {
         text: trimmed,
         pageCount,

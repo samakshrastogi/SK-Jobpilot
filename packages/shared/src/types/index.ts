@@ -227,6 +227,7 @@ export interface Job {
   matchExplanation?: string;
   savedStatus: boolean;
   archivedStatus: boolean;
+  freshnessStatus?: 'new' | 'active' | 'updated' | 'stale' | 'expired' | 'removed' | 'unknown';
   canonicalUrl?: string;
   fingerprint?: string;
   createdAt: string;
@@ -289,4 +290,310 @@ export interface AgentActivityLog {
   action: string;
   status: 'info' | 'success' | 'warning' | 'error';
   details: string;
+}
+
+// Phase 3 AI Intelligence Types
+export interface CandidateAnalysis {
+  id?: string;
+  fingerprint: string;
+  primaryTitle: string;
+  seniorityEstimate: string;
+  totalRelevantExperienceYears: number;
+  coreSkills: string[];
+  supportingSkills: string[];
+  toolsAndPlatforms: string[];
+  domainExperience: string[];
+  industryExperience: string[];
+  leadershipIndicators: string[];
+  backendStrengths: string[];
+  frontendStrengths: string[];
+  cloudDevOpsStrengths: string[];
+  aiAutomationStrengths: string[];
+  strongestAchievements: string[];
+  measurableEvidence: string[];
+  preferredRoles: string[];
+  roleSuitability: string[];
+  missingOrWeakInfo: string[];
+  parsingWarnings: string[];
+  evidenceReferences?: Array<{ claim: string; source: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface JobAnalysis {
+  id?: string;
+  jobId: string;
+  normalizedTitle: string;
+  company: string;
+  seniority: string;
+  roleFamily: string;
+  requiredExperienceYears: number;
+  requiredSkills: string[];
+  preferredSkills: string[];
+  responsibilities: string[];
+  qualifications: string[];
+  educationRequirements: string[];
+  domainRequirements: string[];
+  location: string;
+  workMode: string;
+  employmentType: string;
+  visaSponsorship: string;
+  compensationText: string;
+  importantKeywords: string[];
+  negativeRequirements: string[];
+  confidenceScore: number;
+  extractionWarnings: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MatchCategoryScore {
+  score: number;
+  weight: number;
+  weightedScore: number;
+  notes: string;
+}
+
+export interface JobMatch {
+  id?: string;
+  jobId: string;
+  candidateFingerprint: string;
+  overallScore: number;
+  recommendation:
+    | 'excellent_match'
+    | 'strong_match'
+    | 'possible_match'
+    | 'weak_match'
+    | 'not_recommended'
+    | 'manual_review_required';
+  categories: {
+    requiredSkills: MatchCategoryScore;
+    experience: MatchCategoryScore;
+    roleTitleAlignment: MatchCategoryScore;
+    preferredSkills: MatchCategoryScore;
+    domainAlignment: MatchCategoryScore;
+    projectEvidence: MatchCategoryScore;
+    educationAlignment: MatchCategoryScore;
+    locationWorkPref: MatchCategoryScore;
+  };
+  matchedRequiredSkills: string[];
+  missingRequiredSkills: string[];
+  matchedPreferredSkills: string[];
+  missingPreferredSkills: string[];
+  transferableSkills: string[];
+  strongSupportingExperience: string[];
+  weakEvidenceAreas: string[];
+  potentialDisqualifiers: string[];
+  explanation: string;
+  evidenceReferences?: Array<{ claim: string; source: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SkillGapAnalysis {
+  id?: string;
+  jobId: string;
+  criticalMissingRequirements: string[];
+  importantMissingSkills: string[];
+  optionalMissingSkills: string[];
+  weaklyEvidencedSkills: string[];
+  transferableSkills: string[];
+  resumeVisibilityGaps: string[];
+  genuineExperienceGaps: string[];
+  recommendedResumeImprovements: string[];
+  recommendedPortfolioImprovements: string[];
+  recommendedInterviewPrepTopics: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TailoredResumeChange {
+  id: string;
+  section: string;
+  transformationType: 'unchanged' | 'reordered' | 'shortened' | 'clarified' | 'keyword_aligned' | 'impact_emphasized';
+  originalText: string;
+  proposedText: string;
+  reason: string;
+  targetedKeywords: string[];
+  truthfulnessConfidence: number;
+  sourceReference: string;
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+}
+
+export interface TailoredResume {
+  id: string;
+  name: string;
+  sourceResumeId?: string;
+  jobId: string;
+  job?: Job;
+  candidateFingerprint: string;
+  jobFingerprint: string;
+  promptVersion: string;
+  provider: string;
+  model: string;
+  proposedSummary: string;
+  proposedSkills: string[];
+  proposedExperienceBullets: TailoredResumeChange[];
+  coverLetterOutline?: string;
+  estimatedScoreBefore: number;
+  estimatedScoreAfter: number;
+  approvalStatus: 'draft' | 'generated' | 'under_review' | 'approved' | 'rejected' | 'archived';
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AIExecution {
+  id: string;
+  operationType:
+    | 'candidate_analysis'
+    | 'resume_analysis'
+    | 'job_extraction'
+    | 'job_match'
+    | 'skill_gap_analysis'
+    | 'resume_tailoring'
+    | 'interview_question_generation';
+  provider: string;
+  model: string;
+  entityType?: string;
+  entityId?: string;
+  status: 'started' | 'completed' | 'failed' | 'cached';
+  durationMs: number;
+  promptVersion: string;
+  retryCount: number;
+  inputTokenUsage: number;
+  outputTokenUsage: number;
+  totalTokenUsage: number;
+  estimatedCostUsd: number;
+  errorCategory?: string;
+  safeErrorMessage?: string;
+  resultSummary?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AIHealthStatus {
+  status: 'healthy' | 'degraded' | 'unavailable';
+  configuredProvider: string;
+  textModel: string;
+  embeddingModel: string;
+  hasApiKey: boolean;
+  dailyRequestsUsed: number;
+  dailyRequestLimit: number;
+  dailyTokensUsed: number;
+  dailyTokenBudget: number;
+  circuitState: 'closed' | 'open' | 'half_open';
+  lastSuccessfulRequestAt?: string;
+  lastFailedRequestAt?: string;
+}
+
+// Phase 4 Discovery Types
+export interface DiscoverySource {
+  id: string;
+  name: string;
+  providerType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'generic_html' | 'generic_browser' | 'rss' | 'manual' | 'import';
+  companyName: string;
+  baseUrl?: string;
+  careersUrl: string;
+  boardId?: string;
+  includedKeywords?: string[];
+  excludedKeywords?: string[];
+  enabled: boolean;
+  scheduleEnabled: boolean;
+  scheduleExpression?: string;
+  lastRunAt?: string;
+  lastRunStatus?: 'success' | 'failure' | 'none';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscoveryRun {
+  id: string;
+  sourceId: string;
+  providerType: string;
+  trigger: 'manual' | 'scheduled' | 'import';
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  jobsDiscovered: number;
+  jobsInserted: number;
+  duplicatesFound: number;
+  errorMessage?: string;
+  durationMs: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Phase 4 Interview Preparation & Mock Types
+export interface InterviewQuestion {
+  id: string;
+  question: string;
+  category: string;
+  difficulty: string;
+  whyAsked: string;
+  skillsAssessed: string[];
+  suggestedFramework: string;
+  keyPointsToCover: string[];
+  commonMistakes: string[];
+}
+
+export interface InterviewPreparation {
+  id: string;
+  jobId: string;
+  job?: Job;
+  interviewType: string;
+  difficulty: string;
+  sevenDayStudyPlan: Array<{ day: number; focus: string; tasks: string[] }>;
+  questions: InterviewQuestion[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MockAnswerFeedback {
+  questionId: string;
+  question: string;
+  candidateAnswer: string;
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  suggestedAnswer: string;
+  starAnalysis?: { situation: string; task: string; action: string; result: string };
+}
+
+export interface MockInterviewSession {
+  id: string;
+  preparationId: string;
+  jobId: string;
+  interviewType: string;
+  status: 'in_progress' | 'completed';
+  currentQuestionIndex: number;
+  questions: InterviewQuestion[];
+  answers: MockAnswerFeedback[];
+  overallScore?: number;
+  finalSummary?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Phase 4 Saved Answer & Reminder Types
+export interface SavedAnswer {
+  id: string;
+  canonicalKey: string;
+  category: string;
+  answerText: string;
+  requiresConfirmation: boolean;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FollowUpReminder {
+  id: string;
+  applicationId: string;
+  application?: Application;
+  reminderType: 'application_follow_up' | 'recruiter_reply' | 'assessment_deadline' | 'interview_preparation' | 'interview_follow_up' | 'offer_decision' | 'manual';
+  title: string;
+  dueDate: string;
+  notes?: string;
+  isCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

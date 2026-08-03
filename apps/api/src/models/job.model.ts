@@ -31,6 +31,7 @@ export interface IJobDocument extends Document {
   matchExplanation?: string;
   savedStatus: boolean;
   archivedStatus: boolean;
+  freshnessStatus?: 'new' | 'active' | 'updated' | 'stale' | 'expired' | 'removed' | 'unknown';
   rawMetadata?: Schema.Types.Mixed;
   canonicalUrl?: string;
   fingerprint?: string;
@@ -84,6 +85,12 @@ const jobSchema = new Schema<IJobDocument>(
     matchExplanation: { type: String, default: '' },
     savedStatus: { type: Boolean, default: false, index: true },
     archivedStatus: { type: Boolean, default: false, index: true },
+    freshnessStatus: {
+      type: String,
+      enum: ['new', 'active', 'updated', 'stale', 'expired', 'removed', 'unknown'],
+      default: 'active',
+      index: true,
+    },
     rawMetadata: { type: Schema.Types.Mixed },
     canonicalUrl: { type: String, index: true },
     fingerprint: { type: String, index: true },
