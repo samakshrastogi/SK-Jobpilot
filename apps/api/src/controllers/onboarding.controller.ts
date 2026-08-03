@@ -1,16 +1,19 @@
 import type { Request, Response } from 'express';
+import mongoose from 'mongoose';
+import { z } from 'zod';
 import {
   getOrCreateOnboardingState,
   updateOnboardingStep,
   recommendRolesFromProfile,
   selectTargetRoles,
 } from '../services/onboarding.service.js';
-import { executeHourlyDiscoveryPipeline } from '../services/hourly-discovery.service.js';
+import { executeApplicationAgent } from '../services/application-agent.service.js';
 import { TargetRoleModel } from '../models/target-role.model.js';
 import { AutomationConfigurationModel } from '../models/automation-configuration.model.js';
 import { ReviewQueueItemModel } from '../models/review-queue-item.model.js';
 import { selectTargetRolesSchema, automationConfigSchema, updateOnboardingStepSchema } from '@sk-job-pilot/shared';
 import { sendSuccess } from '../utils/response.js';
+import { AppError } from '../errors/app-error.js';
 
 export async function fetchOnboardingState(req: Request, res: Response): Promise<void> {
   const state = await getOrCreateOnboardingState();
@@ -71,11 +74,25 @@ export async function handleUpdateAutomationConfig(req: Request, res: Response):
 }
 
 export async function handleRunHourlyPipelineNow(req: Request, res: Response): Promise<void> {
-  const result = await executeHourlyDiscoveryPipeline();
-  sendSuccess(res, result, 'Hourly discovery pipeline executed successfully', 200, req);
+  const result = await executeApplicationAgent('manual');
+  sendSuccess(res, result, 'Application agent pipeline executed successfully', 200, req);
 }
 
 export async function fetchReviewQueue(req: Request, res: Response): Promise<void> {
-  const items = await ReviewQueueItemModel.find().populate('job');
+  const items = await ReviewQueueItemModel.find({ status: 'pending' }).sort({ createdAt: -1 }).populate('jobId');
   sendSuccess(res, items, 'Review queue items retrieved successfully', 200, req);
+}
+
+const reviewDecisionSchema = z.object({
+  status: z.enum(['approved', 'rejected', 'resolved']),
+  userCorrection: z.string().trim().max(5000).optional().default(''),
+});
+
+export async function updateReviewQueueItem(req: Request, res: Response): Promise<void> {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  if (!mongoose.Types.ObjectId.isValid(id)) throw AppError.badRequest('Invalid review queue item ID');
+  const validated = reviewDecisionSchema.parse(req.body);
+  const item = await ReviewQueueItemModel.findByIdAndUpdate(id, validated, { new: true }).populate('jobId');
+  if (!item) throw AppError.notFound('Review queue item not found');
+  sendSuccess(res, item, 'Review queue decision saved successfully', 200, req);
 }

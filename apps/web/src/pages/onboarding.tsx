@@ -145,7 +145,7 @@ export function OnboardingPage() {
       });
       await updateOnboardingStep(6);
       const run = await runDiscoveryNow();
-      const detail = run.data?.status === 'skipped' ? run.data.reason : `${run.data?.jobsInserted || 0} new jobs captured`;
+      const detail = run.data?.summary || 'Agent workflow is ready.';
       toast.success(`Automation activated. ${detail || 'Discovery is ready.'}`);
       navigate('/automation');
     } catch (error) {

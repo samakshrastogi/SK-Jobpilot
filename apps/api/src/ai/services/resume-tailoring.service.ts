@@ -72,32 +72,17 @@ export async function generateTailoredResume(jobId: string): Promise<TailoredRes
       resultSummary: `Generated proposed tailored resume for ${job.jobTitle}`,
     });
   } catch {
+    const evidenceText = (rawResumeText + ' ' + JSON.stringify(profileJson)).toLowerCase();
+    const evidencedSkills = (job.requiredSkills || []).filter((skill) => evidenceText.includes(skill.toLowerCase()));
     generatedData = {
-      name: `Tailored Resume - ${job.companyName}`,
+      name: 'Tailored Resume - ' + job.companyName,
       jobId,
-      proposedSummary:
-        profile?.professionalInfo?.summary ||
-        `Experienced ${job.jobTitle} with proven technical background.`,
-      proposedSkills: job.requiredSkills || ['TypeScript', 'React', 'Node.js'],
-      proposedExperienceBullets: [
-        {
-          id: 'change-1',
-          section: 'experience',
-          transformationType: 'keyword_aligned',
-          originalText: 'Developed full stack software solutions.',
-          proposedText: `Developed scalable full stack features tailored for ${job.jobTitle} requirements using ${
-            (job.requiredSkills || ['TypeScript'])[0]
-          }.`,
-          reason: 'Aligned bullet point to emphasize required job skills.',
-          targetedKeywords: job.requiredSkills || ['TypeScript'],
-          truthfulnessConfidence: 100,
-          sourceReference: 'master_resume.experience[0]',
-          approvalStatus: 'pending',
-        },
-      ],
-      coverLetterOutline: `I am excited to submit my tailored application for the ${job.jobTitle} role at ${job.companyName}.`,
-      estimatedScoreBefore: job.matchScore || 70,
-      estimatedScoreAfter: Math.min((job.matchScore || 70) + 15, 95),
+      proposedSummary: profile?.professionalInfo?.summary || '',
+      proposedSkills: evidencedSkills,
+      proposedExperienceBullets: [],
+      coverLetterOutline: '',
+      estimatedScoreBefore: job.matchScore || 0,
+      estimatedScoreAfter: job.matchScore || 0,
       approvalStatus: 'generated',
     };
   }

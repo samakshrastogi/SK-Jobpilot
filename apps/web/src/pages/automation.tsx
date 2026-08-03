@@ -6,26 +6,30 @@ import { Button } from '../components/ui/button';
 import { Play, Pause, RefreshCw, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
+  fetchAgentStatus,
   fetchAutomationConfiguration,
   fetchReviewQueue,
   runDiscoveryNow,
   updateAutomationConfiguration,
+  type AgentStatus,
   type AutomationConfiguration,
 } from '../services/onboarding.service';
 
 export function AutomationPage() {
   const [config, setConfig] = React.useState<AutomationConfiguration | null>(null);
   const [reviewCount, setReviewCount] = React.useState(0);
+  const [agentStatus, setAgentStatus] = React.useState<AgentStatus | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRunning, setIsRunning] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     try {
-      const [configResponse, queueResponse] = await Promise.all([
-        fetchAutomationConfiguration(), fetchReviewQueue(),
+      const [configResponse, queueResponse, agentResponse] = await Promise.all([
+        fetchAutomationConfiguration(), fetchReviewQueue(), fetchAgentStatus(),
       ]);
       setConfig(configResponse.data || null);
       setReviewCount(queueResponse.data?.length || 0);
+      setAgentStatus(agentResponse.data || null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not load automation status');
     } finally {
@@ -51,8 +55,8 @@ export function AutomationPage() {
     try {
       const response = await runDiscoveryNow();
       const result = response.data;
-      if (result?.status === 'skipped') toast.warning(result.reason || 'Discovery skipped');
-      else toast.success(`Discovery completed: ${result?.jobsInserted || 0} new jobs`);
+      if (result?.status === 'skipped') toast.warning(result.summary || 'Agent run skipped');
+      else toast.success(`Agent completed: ${result?.prepared || 0} prepared, ${result?.skipped || 0} skipped`);
       await refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Discovery run failed');
@@ -62,11 +66,11 @@ export function AutomationPage() {
   };
 
   return <div className="space-y-6 max-w-5xl mx-auto pb-12">
-    <PageHeader title="Automation Control Center" description="Real discovery and application-preparation status for your selected roles." actions={<div className="flex gap-2"><Button size="sm" variant="outline" disabled={!config || isLoading} onClick={() => void toggleAutomation()}>{config?.enabled ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}{config?.enabled ? 'Pause' : 'Resume'}</Button><Button size="sm" variant="primary" disabled={!config?.enabled || isRunning} onClick={() => void handleRunNow()}><RefreshCw className={`h-4 w-4 mr-1.5 ${isRunning ? 'animate-spin' : ''}`} />Run Discovery Now</Button></div>} />
+    <PageHeader title="Automation Control Center" description="Real discovery and application-preparation status for your selected roles." actions={<div className="flex gap-2"><Button size="sm" variant="outline" disabled={!config || isLoading} onClick={() => void toggleAutomation()}>{config?.enabled ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}{config?.enabled ? 'Pause' : 'Resume'}</Button><Button size="sm" variant="primary" disabled={!config?.enabled || isRunning} onClick={() => void handleRunNow()}><RefreshCw className={`h-4 w-4 mr-1.5 ${isRunning ? 'animate-spin' : ''}`} />Run AI Agent Now</Button></div>} />
 
     <div className="grid md:grid-cols-4 gap-4">
       <StatusCard label="Automation" value={isLoading ? 'Loading…' : config?.enabled ? 'ACTIVE' : 'PAUSED'} badge={config?.frequency || 'unknown'} healthy={Boolean(config?.enabled)} />
-      <StatusCard label="Execution mode" value="Prepare & Review" badge="No auto-submit" healthy />
+      <StatusCard label="Latest agent run" value={agentStatus?.latestRun?.status?.toUpperCase() || 'NOT RUN'} badge={`${agentStatus?.latestRun?.prepared || 0} prepared`} healthy={agentStatus?.latestRun?.status !== 'failed'} />
       <StatusCard label="Daily target" value={`${config?.maxApplicationsPerDay || 0} jobs`} badge={`Min ${config?.minimumMatchScore || 0}%`} healthy />
       <StatusCard label="Review queue" value={`${reviewCount} pending`} badge={reviewCount ? 'Needs action' : 'Clear'} healthy={!reviewCount} />
     </div>

@@ -25,6 +25,36 @@ export interface RoleRecommendation {
   applicationRecommendation: 'highly_qualified' | 'qualified' | 'partially_qualified' | 'stretch_role' | 'not_recommended';
 }
 
+export interface ReviewQueueItem {
+  id: string;
+  reason: string;
+  blockingQuestion: string;
+  suggestedAnswer?: string;
+  confidence: number;
+  sensitiveFlag: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'resolved';
+  jobId?: { id: string; jobTitle: string; companyName: string; applicationUrl?: string; sourceUrl?: string };
+}
+export interface AgentRunSummary {
+  id?: string;
+  status: 'running' | 'completed' | 'failed' | 'skipped';
+  discovered: number;
+  considered: number;
+  matched: number;
+  prepared: number;
+  skipped: number;
+  failed: number;
+  summary: string;
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface AgentStatus {
+  latestRun: AgentRunSummary | null;
+  pendingReview: number;
+  runningTasks: number;
+  inProcess: boolean;
+}
 export interface AutomationConfiguration {
   enabled: boolean;
   mode: 'discovery_only' | 'prepare_and_review';
@@ -59,14 +89,21 @@ export function fetchAutomationConfiguration(): Promise<ApiResponse<AutomationCo
   return apiFetch<AutomationConfiguration>('/automation/config');
 }
 
-export function fetchReviewQueue(): Promise<ApiResponse<unknown[]>> {
-  return apiFetch<unknown[]>('/review-queue');
+export function fetchReviewQueue(): Promise<ApiResponse<ReviewQueueItem[]>> {
+  return apiFetch<ReviewQueueItem[]>('/review-queue');
 }
 
 export function updateAutomationConfiguration(config: AutomationConfiguration): Promise<ApiResponse<AutomationConfiguration>> {
   return apiFetch<AutomationConfiguration>('/automation/config', { method: 'PUT', body: config });
 }
 
-export function runDiscoveryNow(): Promise<ApiResponse<{ status: string; jobsInserted?: number; reason?: string }>> {
-  return apiFetch<{ status: string; jobsInserted?: number; reason?: string }>('/automation/run-now', { method: 'POST', timeoutMs: 60000 });
+export function fetchAgentStatus(): Promise<ApiResponse<AgentStatus>> {
+  return apiFetch<AgentStatus>('/agent/status');
+}
+
+export function runDiscoveryNow(): Promise<ApiResponse<AgentRunSummary>> {
+  return apiFetch<AgentRunSummary>('/agent/run-now', { method: 'POST', timeoutMs: 180000 });
+}
+export function updateReviewQueueItem(id: string, status: 'approved' | 'rejected' | 'resolved', userCorrection = ''): Promise<ApiResponse<ReviewQueueItem>> {
+  return apiFetch<ReviewQueueItem>(`/review-queue/${id}`, { method: 'PATCH', body: { status, userCorrection } });
 }

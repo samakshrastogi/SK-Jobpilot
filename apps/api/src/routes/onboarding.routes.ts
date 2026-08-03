@@ -9,6 +9,7 @@ import {
   handleUpdateAutomationConfig,
   handleRunHourlyPipelineNow,
   fetchReviewQueue,
+  updateReviewQueueItem,
 } from '../controllers/onboarding.controller.js';
 import { asyncHandler } from '../middlewares/async-handler.js';
 
@@ -25,3 +26,4 @@ onboardingRouter.put('/automation/config', asyncHandler(handleUpdateAutomationCo
 onboardingRouter.post('/automation/run-now', asyncHandler(handleRunHourlyPipelineNow));
 
 onboardingRouter.get('/review-queue', asyncHandler(fetchReviewQueue));
+onboardingRouter.patch('/review-queue/:id', asyncHandler(updateReviewQueueItem));
