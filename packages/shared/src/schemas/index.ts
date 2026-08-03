@@ -433,3 +433,28 @@ export const exportResumeRequestSchema = z.object({
   format: z.enum(['pdf', 'docx', 'txt', 'html']).optional().default('pdf'),
   template: z.enum(['ats_classic', 'modern_minimal', 'tech_lead']).optional().default('ats_classic'),
 });
+
+// Task 2 Onboarding & Hourly Automation Schemas
+export const onboardingStateSchema = z.object({
+  step: z.number().int().min(1).max(6).default(1),
+  resumeUploaded: z.boolean().default(false),
+  candidateProfileReviewed: z.boolean().default(false),
+  rolesSelected: z.boolean().default(false),
+  preferencesConfigured: z.boolean().default(false),
+  answersConfigured: z.boolean().default(false),
+  automationReviewed: z.boolean().default(false),
+  automationEnabled: z.boolean().default(false),
+});
+
+export const selectTargetRolesSchema = z.object({
+  roleTitles: z.array(z.string()).min(1, 'At least one target role must be selected'),
+});
+
+export const automationConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  mode: z.enum(['discovery_only', 'prepare_and_review', 'safe_auto_apply']).default('prepare_and_review'),
+  frequency: z.enum(['hourly', 'daily']).default('hourly'),
+  minimumMatchScore: z.number().min(0).max(100).default(75),
+  maxApplicationsPerHour: z.number().min(1).max(20).default(5),
+  maxApplicationsPerDay: z.number().min(1).max(50).default(20),
+});

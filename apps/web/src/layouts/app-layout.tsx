@@ -16,6 +16,8 @@ import {
   Bell,
   Search,
   Radio,
+  Sparkles,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { Badge } from '../components/ui/badge';
@@ -25,6 +27,9 @@ import { useHealthQuery } from '../hooks/use-health';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Onboarding', path: '/onboarding', icon: Sparkles },
+  { label: 'Automation', path: '/automation', icon: Layers },
+  { label: 'Review Queue', path: '/review-queue', icon: ShieldAlert },
   { label: 'Discover Jobs', path: '/discover', icon: Compass },
   { label: 'Discovery Sources', path: '/discovery-sources', icon: Layers },
   { label: 'Saved Jobs', path: '/saved-jobs', icon: BookmarkCheck },
@@ -213,7 +218,6 @@ export function AppLayout() {
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-3">
-            {/* Search Trigger Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200 transition-all"
@@ -225,7 +229,6 @@ export function AppLayout() {
               </kbd>
             </button>
 
-            {/* Notifications Button */}
             <button
               onClick={() => setIsNotificationsOpen(true)}
               className="relative rounded-lg border border-slate-800 bg-slate-900/80 p-2 text-slate-400 hover:border-slate-700 hover:text-white transition-colors"
@@ -258,9 +261,9 @@ export function AppLayout() {
               <Bot className="h-4 w-4" /> Discovery Agent
             </div>
             <p className="text-xs text-slate-300">
-              New High-Match Senior TypeScript jobs discovered.
+              Hourly automated discovery run completed successfully.
             </p>
-            <span className="text-[10px] text-slate-400 mt-2 block">10 minutes ago</span>
+            <span className="text-[10px] text-slate-400 mt-2 block">Just now</span>
           </div>
         </div>
       </Drawer>

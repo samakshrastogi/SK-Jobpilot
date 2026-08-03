@@ -4,7 +4,6 @@ import { ResumeModel } from '../models/resume.model.js';
 import { JobModel } from '../models/job.model.js';
 import { ApplicationModel } from '../models/application.model.js';
 import { TailoredResumeModel } from '../models/tailored-resume.model.js';
-import { DiscoverySourceModel } from '../models/discovery-source.model.js';
 import { env } from '../config/env.js';
 
 export async function runMaintenanceCheck() {
@@ -38,11 +37,29 @@ export async function runMaintenanceCheck() {
   };
 }
 
+export async function runMaintenanceRepair() {
+  const checkResult = await runMaintenanceCheck();
+  let repairedCount = 0;
+
+  const res1 = await ApplicationModel.deleteMany({ jobId: { $exists: false } });
+  repairedCount += res1.deletedCount || 0;
+
+  const res2 = await TailoredResumeModel.deleteMany({ jobId: { $exists: false } });
+  repairedCount += res2.deletedCount || 0;
+
+  return {
+    repairedCount,
+    summary: `Maintenance repair completed. Repaired/cleaned ${repairedCount} orphan records.`,
+  };
+}
+
 if (process.argv[1]?.includes('maintenance.ts')) {
   mongoose.connect(env.MONGODB_URI).then(async () => {
-    console.log('Running SK JobPilot Maintenance Check...');
-    const res = await runMaintenanceCheck();
-    console.log(JSON.stringify(res, null, 2));
+    console.log('Running SK JobPilot Maintenance Check & Repair...');
+    const repair = await runMaintenanceRepair();
+    console.log('Repair result:', repair);
+    const check = await runMaintenanceCheck();
+    console.log('Post-repair check:', check);
     await mongoose.disconnect();
   });
 }
