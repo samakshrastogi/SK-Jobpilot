@@ -56,9 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
       renderFields(detectedFields);
       fillBtn.style.display = detectedFields.length ? 'block' : 'none';
       fillBtn.disabled = formResponse?.platform === 'linkedin';
+      const hasApplicationFields = detectedFields.some((field) => field.category !== 'general_question');
       status.innerText = formResponse?.platform === 'linkedin'
         ? `Detected ${detectedFields.length} fields. LinkedIn autofill is disabled; use its saved application data.`
-        : `Detected ${detectedFields.length} fields; sensitive and unknown answers will be skipped.`;
+        : !hasApplicationFields
+          ? 'No application form detected. Open the employer application page, then try again.'
+          : `Detected ${detectedFields.length} fields; sensitive and unknown answers will be skipped.`;
     } catch (error) { status.innerText = 'Could not prepare this page: ' + error.message; }
   });
 

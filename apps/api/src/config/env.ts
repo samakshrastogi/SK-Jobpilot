@@ -17,4 +17,13 @@ if (!parseResult.success) {
   throw new Error('Invalid environment configuration');
 }
 
-export const env: EnvConfig = parseResult.data;
+function useIsolatedTestDatabase(config: EnvConfig): EnvConfig {
+  if (!process.env.VITEST) return config;
+  const isolatedUri = config.MONGODB_URI.replace(/\/([^/?]+)(\?|$)/, (_match, databaseName: string, suffix: string) => {
+    const safeName = databaseName.endsWith('_test') ? databaseName : `${databaseName}_test`;
+    return `/${safeName}${suffix}`;
+  });
+  return { ...config, NODE_ENV: 'test', MONGODB_URI: isolatedUri };
+}
+
+export const env: EnvConfig = useIsolatedTestDatabase(parseResult.data);

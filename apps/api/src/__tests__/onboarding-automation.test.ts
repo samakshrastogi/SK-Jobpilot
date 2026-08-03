@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import mongoose from 'mongoose';
 import {
   getOrCreateOnboardingState,
@@ -57,10 +57,19 @@ describe('Onboarding & Hourly Discovery Automation Engine Tests', () => {
     expect(selected[0].primaryTitle).toBe('Backend Engineer');
   });
 
-  it('should execute hourly discovery pipeline', async (ctx) => {
+  it('should execute hourly discovery pipeline without depending on live providers', async (ctx) => {
     if (!isDbAvailable) return ctx.skip();
-    const res = await executeHourlyDiscoveryPipeline();
-    expect(res).toBeDefined();
-    expect(res.status).toBeDefined();
+    vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
+      const target = String(url);
+      const body = target.includes('remotive.com') ? { jobs: [] } : { jobs: [] };
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }));
+    try {
+      const res = await executeHourlyDiscoveryPipeline();
+      expect(res).toBeDefined();
+      expect(res.status).toBeDefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

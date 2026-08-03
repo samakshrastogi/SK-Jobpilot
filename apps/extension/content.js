@@ -110,7 +110,10 @@ function fillFormFields(fieldData) {
     setNativeValue(element, String(item.value));
     filledCount += 1;
   }
-  return { success: true, filledCount, reviewCount, message: 'Safe values filled. Review every field and submit manually.' };
+  const message = filledCount > 0
+    ? `Filled ${filledCount} safe field${filledCount === 1 ? '' : 's'}. Review every field and submit manually.`
+    : `No safe application fields were filled. ${reviewCount} field${reviewCount === 1 ? '' : 's'} require review.`
+  return { success: true, filledCount, reviewCount, message };
 }
 
 function captureCurrentJob() {
