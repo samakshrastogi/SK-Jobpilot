@@ -6,6 +6,7 @@ import { ResumeModel } from '../models/resume.model.js';
 import { getAIProvider } from '../ai/provider-factory.js';
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
+import { logger } from '../utils/logger.js';
 
 const roleRecommendationAiSchema = z.array(
   z.object({
@@ -203,15 +204,22 @@ Rules:
     if (Array.isArray(aiRes.data)) {
       recommendations = aiRes.data;
     }
-  } catch {
+  } catch (error) {
+    logger.warn({ reason: error instanceof Error ? error.message : 'Unknown AI error' }, 'Role recommendation AI unavailable; using profile evidence');
     const profileTitles = [
       ...(profile?.professionalInfo?.preferredRoles || []),
       profile?.professionalInfo?.currentTitle || '',
       ...(profile?.experience || []).map((item) => typeof item.position === 'string' ? item.position : ''),
     ].map((title) => title.trim()).filter(Boolean);
-    const titles = Array.from(new Set(profileTitles));
     const skillGroups = profile?.skills || {};
     const skills = Array.from(new Set(Object.values(skillGroups).flatMap((value) => Array.isArray(value) ? value : [])));
+    const skillDerivedTitles = [
+      skillGroups.backend?.[0] ? `${skillGroups.backend[0]} Developer` : '',
+      skillGroups.frontend?.[0] ? `${skillGroups.frontend[0]} Developer` : '',
+      skillGroups.aiAutomation?.[0] ? `${skillGroups.aiAutomation[0]} Engineer` : '',
+      skillGroups.languages?.[0] ? `${skillGroups.languages[0]} Developer` : '',
+    ];
+    const titles = Array.from(new Set([...profileTitles, ...skillDerivedTitles].filter(Boolean)));
     if (!titles.length) {
       throw AppError.badRequest('No evidence-backed role title is available. Verify the parsed profile or select a target role manually.');
     }

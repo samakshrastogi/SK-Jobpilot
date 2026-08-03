@@ -20,10 +20,13 @@ function isDatabaseUnavailableError(error: Error): boolean {
 
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof AppError) {
-    const log = err.statusCode >= 500 && err.statusCode !== 503 ? logger.error.bind(logger) : logger.warn.bind(logger);
-    log({ err, path: req.path, method: req.method }, 'Request failed');
+    if (err.statusCode >= 500) {
+      logger.error({ err, path: req.path, method: req.method, statusCode: err.statusCode }, 'Request failed');
+    } else {
+      logger.warn({ path: req.path, method: req.method, statusCode: err.statusCode, code: err.code, message: err.message }, 'Request failed');
+    }
     sendError(res, err.message, err.statusCode, err.code, err.details,
-      env.NODE_ENV === 'development' ? err.stack : undefined, req);
+      env.NODE_ENV === 'development' && err.statusCode >= 500 ? err.stack : undefined, req);
     return;
   }
 
@@ -31,7 +34,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     logger.warn({ issues: err.issues, path: req.path, method: req.method }, 'Request validation failed');
     sendError(res, 'Validation failed', 400, 'VALIDATION_ERROR',
       typeof err.format === 'function' ? err.format() : err.issues,
-      env.NODE_ENV === 'development' ? err.stack : undefined, req);
+      undefined, req);
     return;
   }
 
@@ -39,7 +42,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     logger.error({ err, path: req.path, method: req.method }, 'Database request failed');
     sendError(res, 'Database is unavailable. Start MongoDB and retry shortly.', 503,
       'SERVICE_UNAVAILABLE', undefined,
-      env.NODE_ENV === 'development' ? err.stack : undefined, req);
+      undefined, req);
     return;
   }
 

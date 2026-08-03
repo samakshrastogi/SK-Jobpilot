@@ -1,4 +1,4 @@
-import express, { type Express, type Request } from 'express';
+import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -44,9 +44,15 @@ export function createApp(): Express {
     app.use(
       pinoHttp({
         logger,
-        customProps: (req: Request) => ({
-          requestId: req.headers['x-request-id'],
-        }),
+        autoLogging: {
+          ignore: (req: Request) => (req.originalUrl || req.url) === '/api/v1/health',
+        },
+        serializers: {
+          req: (req: Request) => ({ method: req.method, url: (req.originalUrl || req.url), requestId: req.headers['x-request-id'] }),
+          res: (res: Response) => ({ statusCode: res.statusCode }),
+        },
+        customSuccessMessage: (req: Request, res: Response) => `${req.method} ${(req.originalUrl || req.url)} ${res.statusCode}`,
+        customErrorMessage: (req: Request, res: Response) => `${req.method} ${(req.originalUrl || req.url)} ${res.statusCode}`,
       })
     );
   }
