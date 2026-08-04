@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Plus, History, Trash2, ExternalLink, Briefcase, Bell, CheckCircle2 } from 'lucide-react';
+import { Plus, History, Trash2, Briefcase, Bell, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '../components/ui/page-header';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -56,13 +56,14 @@ export function ApplicationsPage() {
   const [selectedJobId, setSelectedJobId] = React.useState('');
 
   // Event form
+  const [eventStatus, setEventStatus] = React.useState('note');
   const [eventTitle, setEventTitle] = React.useState('');
   const [eventDesc, setEventDesc] = React.useState('');
 
   // Reminder form
   const [isAddReminderModalOpen, setIsAddReminderModalOpen] = React.useState(false);
   const [reminderAppId, setReminderAppId] = React.useState('');
-  const [reminderType, setReminderType] = React.useState('application_follow_up');
+  const [reminderType] = React.useState('application_follow_up');
   const [reminderTitle, setReminderTitle] = React.useState('');
   const [reminderDueDate, setReminderDueDate] = React.useState('');
 
@@ -109,13 +110,52 @@ export function ApplicationsPage() {
 
   const handleStatusChange = (id: string, newStatus: string) => {
     updateAppMutation.mutate(
-      { id, data: { status: newStatus as any } },
+      { id, data: { status: newStatus as Application['status'] } },
       {
         onSuccess: () => {
           toast.success(`Application status updated to ${newStatus.replace(/_/g, ' ')}`);
         },
       }
     );
+  };
+
+  const handleAddTimelineEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedApp || !eventTitle.trim()) {
+      toast.error('Please add an event title');
+      return;
+    }
+
+    addEventMutation.mutate(
+      {
+        id: selectedApp.id,
+        event: {
+          status: eventStatus,
+          title: eventTitle.trim(),
+          description: eventDesc.trim(),
+        },
+      },
+      {
+        onSuccess: (res) => {
+          toast.success('Timeline event added');
+          setSelectedApp(res.data || selectedApp);
+          setEventStatus('note');
+          setEventTitle('');
+          setEventDesc('');
+        },
+        onError: (err: unknown) => {
+          toast.error(err instanceof Error ? err.message : 'Failed to add timeline event');
+        },
+      }
+    );
+  };
+
+  const handleCloseTimelineDrawer = () => {
+    setIsTimelineDrawerOpen(false);
+    setSelectedApp(null);
+    setEventStatus('note');
+    setEventTitle('');
+    setEventDesc('');
   };
 
   const handleAddReminder = (e: React.FormEvent) => {
@@ -318,6 +358,81 @@ export function ApplicationsPage() {
         </div>
       )}
 
+
+      <Drawer
+        isOpen={isTimelineDrawerOpen}
+        onClose={handleCloseTimelineDrawer}
+        title="Application Timeline"
+      >
+        {selectedApp ? (
+          <div className="space-y-5">
+            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
+              <h3 className="text-sm font-bold text-slate-100">
+                {selectedApp.job?.jobTitle || 'Application'}
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                {selectedApp.job?.companyName || 'Company'} · {selectedApp.status.replace(/_/g, ' ')}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">History</h4>
+              {selectedApp.timelineEvents?.length ? (
+                selectedApp.timelineEvents.map((event, index) => {
+                  const item = event as { date?: string; status?: string; title?: string; description?: string };
+                  return (
+                    <div key={`${item.title || 'event'}-${index}`} className="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-100">{item.title || 'Timeline event'}</p>
+                          <p className="mt-1 text-xs text-slate-500">{item.status?.replace(/_/g, ' ') || 'note'}</p>
+                        </div>
+                        <span className="text-[11px] text-slate-500">{formatDate(item.date || selectedApp.updatedAt)}</span>
+                      </div>
+                      {item.description ? <p className="mt-2 text-xs text-slate-400">{item.description}</p> : null}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+                  No timeline events yet.
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handleAddTimelineEvent} className="space-y-3 border-t border-slate-800 pt-4">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add event</h4>
+              <Select
+                label="Status"
+                value={eventStatus}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEventStatus(e.target.value)}
+                options={[{ value: 'note', label: 'Note' }, ...statusOptions]}
+              />
+              <Input
+                label="Title"
+                required
+                placeholder="e.g. Followed up with recruiter"
+                value={eventTitle}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEventTitle(e.target.value)}
+              />
+              <Input
+                label="Description"
+                placeholder="Optional details"
+                value={eventDesc}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEventDesc(e.target.value)}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={handleCloseTimelineDrawer}>
+                  Close
+                </Button>
+                <Button type="submit" isLoading={addEventMutation.isPending}>
+                  Add Event
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+      </Drawer>
       {/* Create Application Modal */}
       <Modal
         isOpen={isCreateModalOpen}

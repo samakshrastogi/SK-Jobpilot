@@ -18,9 +18,9 @@ import { requireDatabase } from '../middlewares/database-ready.js';
 export const apiRouter = Router();
 
 apiRouter.use('/', healthRouter);
+apiRouter.use('/', resumeRouter);
 apiRouter.use(requireDatabase);
 apiRouter.use('/', profileRouter);
-apiRouter.use('/', resumeRouter);
 apiRouter.use('/', jobRouter);
 apiRouter.use('/', applicationRouter);
 apiRouter.use('/', aiRouter);

@@ -10,6 +10,7 @@ import {
   setMasterResume,
 } from '../controllers/resume.controller.js';
 import { asyncHandler } from '../middlewares/async-handler.js';
+import { requireDatabase } from '../middlewares/database-ready.js';
 
 const upload = multer({
   limits: {
@@ -32,7 +33,8 @@ const upload = multer({
 
 export const resumeRouter = Router();
 
-resumeRouter.post('/resumes/upload', upload.single('file'), asyncHandler(uploadResume));
+resumeRouter.post('/resumes/upload', upload.single('file'), requireDatabase, asyncHandler(uploadResume));
+resumeRouter.use(requireDatabase);
 resumeRouter.get('/resumes', asyncHandler(getResumes));
 resumeRouter.get('/resumes/:id', asyncHandler(getResumeById));
 resumeRouter.delete('/resumes/:id', asyncHandler(deleteResume));

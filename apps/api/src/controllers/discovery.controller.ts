@@ -2,13 +2,12 @@ import type { Request, Response } from 'express';
 import { DiscoverySourceModel } from '../models/discovery-source.model.js';
 import { DiscoveryRunModel } from '../models/discovery-run.model.js';
 import { executeDiscoveryRun } from '../discovery/services/scheduler.service.js';
+import { ensureDefaultDiscoverySources } from '../discovery/services/default-sources.service.js';
 import { sseActivityManager } from '../discovery/services/sse-activity.service.js';
 import { browserCaptureBatchSchema, createDiscoverySourceSchema } from '@sk-job-pilot/shared';
 import { processAndDeduplicateJobs } from '../discovery/services/deduplication.service.js';
 import type { DiscoveredRawJob } from '../discovery/providers/greenhouse.provider.js';
 import { sendSuccess, sendPaginated } from '../utils/response.js';
-import { AppError } from '../errors/app-error.js';
-import mongoose from 'mongoose';
 
 function getParamId(req: Request): string {
   const param = req.params.id;
@@ -16,6 +15,7 @@ function getParamId(req: Request): string {
 }
 
 export async function fetchDiscoverySources(req: Request, res: Response): Promise<void> {
+  await ensureDefaultDiscoverySources();
   const sources = await DiscoverySourceModel.find().sort({ createdAt: -1 });
   sendSuccess(res, sources, 'Discovery sources retrieved successfully', 200, req);
 }
