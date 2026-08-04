@@ -7,6 +7,7 @@ import { getAIProvider } from '../ai/provider-factory.js';
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
 import { logger } from '../utils/logger.js';
+import { DEFAULT_INDIA_LOCATIONS } from '../discovery/services/job-targeting.service.js';
 
 const roleRecommendationAiSchema = z.array(
   z.object({
@@ -107,7 +108,7 @@ export async function syncResumeIntoCandidateProfile(resume: ParsedResumeForProf
         fullName: inferCandidateName(resume),
         email: parsed.contactInfo.email,
         phone: parsed.contactInfo?.phone || '',
-        location: '',
+        location: 'Gurugram, India',
         linkedinUrl: urls.find((url) => /linkedin\.com/i.test(url)) || '',
         githubUrl: urls.find((url) => /github\.com/i.test(url)) || '',
         portfolioUrl: urls.find((url) => !/linkedin\.com|github\.com/i.test(url)) || '',
@@ -117,7 +118,7 @@ export async function syncResumeIntoCandidateProfile(resume: ParsedResumeForProf
         summary: parsed.summary || '',
         totalExperienceMonths: 0,
         preferredRoles: [],
-        preferredLocations: [],
+        preferredLocations: DEFAULT_INDIA_LOCATIONS,
         remotePreference: 'open',
         employmentTypes: ['Full-time'],
         expectedSalary: { amount: 0, currency: 'INR', period: 'yearly' },
@@ -139,7 +140,12 @@ export async function syncResumeIntoCandidateProfile(resume: ParsedResumeForProf
   } else if (profile) {
     if (parsed.contactInfo?.email) profile.personalInfo.email = parsed.contactInfo.email;
     if (parsed.contactInfo?.phone) profile.personalInfo.phone = parsed.contactInfo.phone;
+    if (!profile.personalInfo.location) profile.personalInfo.location = 'Gurugram, India';
     if (parsed.summary) profile.professionalInfo.summary = parsed.summary;
+    if (!profile.professionalInfo.preferredLocations?.length) {
+      profile.professionalInfo.preferredLocations = DEFAULT_INDIA_LOCATIONS;
+    }
+    profile.jobPreferences.relocationCountries = ['India'];
     for (const [category, values] of Object.entries(categorized)) {
       const key = category as keyof typeof categorized;
       profile.skills[key] = Array.from(new Set([...(profile.skills[key] || []), ...values]));
@@ -271,7 +277,11 @@ export async function selectTargetRoles(roleTitles: string[]) {
   const profile = await CandidateProfileModel.findOne().sort({ createdAt: 1 });
   if (profile) {
     profile.professionalInfo.preferredRoles = roleTitles;
+    if (!profile.professionalInfo.preferredLocations?.length) {
+      profile.professionalInfo.preferredLocations = DEFAULT_INDIA_LOCATIONS;
+    }
     profile.jobPreferences.targetTitles = roleTitles;
+    profile.jobPreferences.relocationCountries = ['India'];
     await profile.save();
   }
 

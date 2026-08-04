@@ -25,6 +25,8 @@ const STEPS = [
   'Upload', 'Verify Evidence', 'Target Roles', 'Preferences', 'Screening Safety', 'Activate Automation',
 ];
 
+const INDIA_LOCATION_DEFAULT = 'Gurugram, Gurgaon, Delhi NCR, Noida, Bengaluru, Bangalore, Hyderabad, Pune, Chennai, Mumbai, Remote India';
+
 export function OnboardingPage() {
   const navigate = useNavigate();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -37,7 +39,7 @@ export function OnboardingPage() {
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
   const [isGeneratingRoles, setIsGeneratingRoles] = React.useState(false);
   const [isActivating, setIsActivating] = React.useState(false);
-  const [preferredLocations, setPreferredLocations] = React.useState('');
+  const [preferredLocations, setPreferredLocations] = React.useState(INDIA_LOCATION_DEFAULT);
   const [minimumMatchScore, setMinimumMatchScore] = React.useState(75);
   const [dailyTarget, setDailyTarget] = React.useState(10);
 
@@ -46,6 +48,11 @@ export function OnboardingPage() {
       if (response.data?.step) setCurrentStep(response.data.step);
     }).catch(() => undefined);
   }, []);
+
+  React.useEffect(() => {
+    const savedLocations = profileQuery.data?.data?.professionalInfo.preferredLocations || [];
+    setPreferredLocations(savedLocations.length > 0 ? savedLocations.join(', ') : INDIA_LOCATION_DEFAULT);
+  }, [profileQuery.data?.data?.professionalInfo.preferredLocations]);
 
   const goToStep = async (step: number) => {
     setCurrentStep(step);
@@ -106,7 +113,7 @@ export function OnboardingPage() {
   };
 
   const handleSavePreferences = async () => {
-    const locations = preferredLocations.split(',').map((value) => value.trim()).filter(Boolean);
+    const locations = (preferredLocations.trim() ? preferredLocations : INDIA_LOCATION_DEFAULT).split(',').map((value) => value.trim()).filter(Boolean);
     try {
       await patchProfile({
         professionalInfo: { preferredLocations: locations, remotePreference: 'open', employmentTypes: ['Full-time'] },

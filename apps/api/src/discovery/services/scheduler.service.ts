@@ -6,6 +6,7 @@ import { fetchAshbyJobs } from '../providers/ashby.provider.js';
 import { fetchWorkableJobs } from '../providers/workable.provider.js';
 import { fetchJobicyJobs } from '../providers/jobicy.provider.js';
 import { fetchRemotiveJobs } from '../providers/remotive.provider.js';
+import { fetchMuseJobs } from '../providers/themuse.provider.js';
 import { fetchRssJobs } from '../providers/rss.provider.js';
 import { fetchGenericHtmlJob } from '../providers/generic-html.provider.js';
 import { processAndDeduplicateJobs } from './deduplication.service.js';
@@ -14,6 +15,8 @@ import { logger } from '../../utils/logger.js';
 import { AppError } from '../../errors/app-error.js';
 import mongoose from 'mongoose';
 import { TargetRoleModel } from '../../models/target-role.model.js';
+import { CandidateProfileModel } from '../../models/candidate-profile.model.js';
+import { filterJobsForCandidateTargeting } from './job-targeting.service.js';
 
 export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 'scheduled' = 'manual') {
   if (!mongoose.Types.ObjectId.isValid(sourceId)) {
@@ -44,7 +47,10 @@ export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 
 
   try {
     let rawJobs: any[] = [];
-    const roles = await TargetRoleModel.find({ active: true }).select('primaryTitle searchAliases').lean();
+    const [roles, profile] = await Promise.all([
+      TargetRoleModel.find({ active: true }),
+      CandidateProfileModel.findOne().sort({ createdAt: 1 }),
+    ]);
     const searchTerms = roles.flatMap((role) => [role.primaryTitle, ...(role.searchAliases || [])]);
 
     switch (source.providerType) {
@@ -66,6 +72,9 @@ export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 
       case 'remotive':
         rawJobs = await fetchRemotiveJobs(searchTerms);
         break;
+      case 'themuse':
+        rawJobs = await fetchMuseJobs(searchTerms);
+        break;
       case 'rss':
         rawJobs = await fetchRssJobs(source.careersUrl, source.companyName);
         break;
@@ -74,6 +83,12 @@ export async function executeDiscoveryRun(sourceId: string, trigger: 'manual' | 
         break;
       default:
         rawJobs = [];
+    }
+
+    const targeting = filterJobsForCandidateTargeting(rawJobs, { profile, roles });
+    rawJobs = targeting.jobs;
+    if (targeting.rejected > 0) {
+      logger.info({ source: source.name, rejected: targeting.rejected, reasons: targeting.reasons }, 'Filtered non-target jobs before persistence');
     }
 
     const { inserted, duplicates } = await processAndDeduplicateJobs(rawJobs, sourceId);

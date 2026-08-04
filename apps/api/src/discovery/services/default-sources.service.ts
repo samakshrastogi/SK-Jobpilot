@@ -9,6 +9,10 @@ const DEFAULT_SOURCES = [
     name: 'Remotive live remote jobs', providerType: 'remotive' as const, companyName: 'Multiple companies',
     careersUrl: 'https://remotive.com/api/remote-jobs', enabled: true, scheduleEnabled: true, scheduleExpression: '15 */6 * * *',
   },
+  {
+    name: 'The Muse India software jobs', providerType: 'themuse' as const, companyName: 'Multiple companies',
+    careersUrl: 'https://www.themuse.com/api/public/jobs', enabled: true, scheduleEnabled: true, scheduleExpression: '30 */4 * * *',
+  },
 ];
 
 export async function ensureDefaultDiscoverySources(): Promise<void> {

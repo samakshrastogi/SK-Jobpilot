@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IDiscoverySourceDocument extends Document {
   name: string;
-  providerType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'jobicy' | 'remotive' | 'generic_html' | 'generic_browser' | 'rss' | 'manual' | 'import';
+  providerType: 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'jobicy' | 'remotive' | 'themuse' | 'generic_html' | 'generic_browser' | 'rss' | 'manual' | 'import';
   companyName: string;
   baseUrl?: string;
   careersUrl: string;
@@ -23,7 +23,7 @@ const discoverySourceSchema = new Schema<IDiscoverySourceDocument>(
     name: { type: String, required: true, trim: true },
     providerType: {
       type: String,
-      enum: ['greenhouse', 'lever', 'ashby', 'workable', 'jobicy', 'remotive', 'generic_html', 'generic_browser', 'rss', 'manual', 'import'],
+      enum: ['greenhouse', 'lever', 'ashby', 'workable', 'jobicy', 'remotive', 'themuse', 'generic_html', 'generic_browser', 'rss', 'manual', 'import'],
       required: true,
       index: true,
     },

@@ -91,9 +91,7 @@ export async function getJobs(req: Request, res: Response): Promise<void> {
     filter.savedStatus = query.savedOnly;
   }
 
-  if (query.archivedOnly !== undefined) {
-    filter.archivedStatus = query.archivedOnly;
-  }
+  filter.archivedStatus = query.archivedOnly === true;
 
   const page = query.page || 1;
   const limit = query.limit || 10;

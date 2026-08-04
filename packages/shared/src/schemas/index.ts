@@ -380,7 +380,7 @@ export const batchMatchRequestSchema = z.object({
 // Phase 4 Discovery Schemas
 export const createDiscoverySourceSchema = z.object({
   name: z.string().min(1, 'Source name is required'),
-  providerType: z.enum(['greenhouse', 'lever', 'ashby', 'workable', 'jobicy', 'remotive', 'generic_html', 'generic_browser', 'rss', 'manual', 'import']),
+  providerType: z.enum(['greenhouse', 'lever', 'ashby', 'workable', 'jobicy', 'remotive', 'themuse', 'generic_html', 'generic_browser', 'rss', 'manual', 'import']),
   companyName: z.string().min(1, 'Company name is required'),
   baseUrl: z.string().optional().default(''),
   careersUrl: z.string().min(1, 'Careers URL or Board ID is required'),
